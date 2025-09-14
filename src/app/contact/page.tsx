@@ -91,7 +91,8 @@ const ContactPage = () => {
         .from('profiles')
         .select('*')
         .eq('role', 'admin')
-      setAdminDebug(adminProfiles || [])
+      // DEBUG : Affiche le résultat brut dans le bloc debug
+      setAdminDebug([{ adminProfiles, adminError }])
       if (adminError || !adminProfiles || adminProfiles.length === 0) {
         setErrors({ general: "Impossible de trouver l'admin pour l'envoi du message." })
         setLoading(false)
