@@ -1,6 +1,7 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { getCurrentUser } from '@/lib/supabase'
 import Link from 'next/link'
 import { Code2, Database, Shield, Smartphone, Zap, Settings, Clock, Users, Check } from 'lucide-react'
 import Button from '@/components/ui/Button'
@@ -110,6 +111,37 @@ const PrestationsPage = () => {
     'Documentation technique'
   ]
 
+  const [user, setUser] = useState<any>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const u = await getCurrentUser()
+      setUser(u)
+      setCheckingAuth(false)
+    }
+    fetchUser()
+  }, [])
+
+  if (checkingAuth) {
+    return null // ou un loader si tu veux
+  }
+
+  const renderDevisButton = () => {
+    if (!user) {
+      return (
+        <Link href="/auth/login">
+          <Button variant="outline" className="w-full">Connectez-vous pour demander un devis</Button>
+        </Link>
+      )
+    }
+    return (
+      <Link href="/contact">
+        <Button variant="primary" className="w-full hover:scale-105">Demander un devis</Button>
+      </Link>
+    )
+  }
+
   return (
     <ClientLayout>
       {/* Hero Section modernisée avec SVG dynamique */}
@@ -163,14 +195,7 @@ const PrestationsPage = () => {
                     </div>
                     <div className="border-t pt-6">
                       <div className="text-2xl font-bold text-anthracite mb-4">{service.price}</div>
-                      <Link href="/contact">
-                        <Button 
-                          variant={service.popular ? 'primary' : 'outline'} 
-                          className="w-full hover:scale-105"
-                        >
-                          Demander un devis
-                        </Button>
-                      </Link>
+                      {renderDevisButton()}
                     </div>
                   </div>
                 </Card>

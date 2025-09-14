@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { validateEmail } from '@/lib/utils'
@@ -10,7 +10,20 @@ import Textarea from '@/components/ui/Textarea'
 import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
 
+import { getCurrentUser } from '@/lib/supabase'
+
 const ContactPage = () => {
+  const [user, setUser] = useState<any>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const u = await getCurrentUser()
+      setUser(u)
+      setCheckingAuth(false)
+    }
+    fetchUser()
+  }, [])
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -132,6 +145,26 @@ ${formData.message}
             </Button>
           </Card>
         </div>
+      </ClientLayout>
+    )
+  }
+
+  if (checkingAuth) {
+    return null // ou un loader si tu veux
+  }
+
+  if (!user) {
+    return (
+      <ClientLayout>
+        <section className="min-h-screen flex items-center justify-center bg-light-gray px-4">
+          <Card className="max-w-md w-full text-center py-16">
+            <h2 className="text-2xl font-bold text-anthracite mb-4">Connectez-vous pour envoyer un message</h2>
+            <p className="text-gray-600 mb-6">Vous devez être connecté pour accéder au formulaire de contact.</p>
+            <a href="/auth/login">
+              <Button className="w-full">Se connecter</Button>
+            </a>
+          </Card>
+        </section>
       </ClientLayout>
     )
   }
