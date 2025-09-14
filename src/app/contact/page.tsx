@@ -14,20 +14,9 @@ import Textarea from '@/components/ui/Textarea'
 import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
 
-// Fonction de debug à placer hors de ContactPage
-function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
-  return (
-    <div style={{ background: '#f0f0f0', color: '#333', padding: 12, margin: 12, border: '1px solid #ccc', borderRadius: 8 }}>
-      <b>DEBUG profils admin trouvés :</b>
-      <pre style={{ fontSize: 12, overflowX: 'auto' }}>{JSON.stringify(adminDebug, null, 2)}</pre>
-    </div>
-  )
-}
 
 
 const ContactPage = () => {
-  // DEBUG: Affichage temporaire des profils admins trouvés
-  const [adminDebug, setAdminDebug] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [formData, setFormData] = useState({
@@ -92,7 +81,7 @@ const ContactPage = () => {
         .select('*')
         .eq('role', 'admin')
       // DEBUG : Affiche le résultat brut dans le bloc debug
-      setAdminDebug([{ adminProfiles, adminError }])
+
       if (adminError || !adminProfiles || adminProfiles.length === 0) {
         setErrors({ general: "Impossible de trouver l'admin pour l'envoi du message." })
         setLoading(false)
@@ -196,7 +185,7 @@ function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
 
   return (
     <ClientLayout>
-      <AdminDebugBlock adminDebug={adminDebug} />
+
       {/* Hero Section modernisée avec SVG dynamique */}
       <section className="relative overflow-hidden py-24 bg-gradient-to-br from-anthracite to-dark-gray text-white">
         <svg className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 opacity-40" width="900" height="400" viewBox="0 0 900 400" fill="none" xmlns="http://www.w3.org/2000/svg">
