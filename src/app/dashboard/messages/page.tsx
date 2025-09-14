@@ -87,7 +87,6 @@ const ReplyForm = ({ user, msg, onSuccess }: { user: any, msg: any, onSuccess?: 
     </div>
   );
 };
-"use client";
 
 import React, { useEffect, useState } from "react";
 import { supabase, getCurrentUser } from "@/lib/supabase";
