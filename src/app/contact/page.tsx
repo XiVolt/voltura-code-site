@@ -1,3 +1,5 @@
+  // DEBUG: Affichage temporaire des profils admins trouvés
+  const [adminDebug, setAdminDebug] = useState<any[]>([])
 
 'use client'
 
@@ -74,17 +76,15 @@ const ContactPage = () => {
       // Récupérer l'ID de l'admin
       const { data: adminProfiles, error: adminError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('*')
         .eq('role', 'admin')
-        .limit(1)
+      setAdminDebug(adminProfiles || [])
       if (adminError || !adminProfiles || adminProfiles.length === 0) {
         setErrors({ general: "Impossible de trouver l'admin pour l'envoi du message." })
         setLoading(false)
         return
       }
       const adminId = String(adminProfiles[0].id)
-      // Debug temporaire
-      console.log('adminId:', adminId, 'userId:', user?.id)
       const payload = {
         sender_id: String(user?.id),
         receiver_id: adminId,
@@ -99,7 +99,6 @@ const ContactPage = () => {
           formData.message
         ].filter(Boolean).join('\n').trim()
       }
-      console.log('payload:', payload)
       const { error } = await supabase
         .from('messages')
         .insert([payload])
@@ -121,6 +120,27 @@ const ContactPage = () => {
     } finally {
       setLoading(false)
     }
+
+  // ---
+
+  // (rien ici)
+
+  // ---
+
+  // Affichage debug des profils admins trouvés (à retirer après debug)
+  // À placer juste avant le return principal
+
+  // ---
+
+// Fonction de debug à placer hors de handleSubmit
+function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
+  return (
+    <div style={{ background: '#f0f0f0', color: '#333', padding: 12, margin: 12, border: '1px solid #ccc', borderRadius: 8 }}>
+      <b>DEBUG profils admin trouvés :</b>
+      <pre style={{ fontSize: 12, overflowX: 'auto' }}>{JSON.stringify(adminDebug, null, 2)}</pre>
+    </div>
+  )
+}
   }
 
   if (success) {
@@ -164,6 +184,7 @@ const ContactPage = () => {
 
   return (
     <ClientLayout>
+      <AdminDebugBlock adminDebug={adminDebug} />
       {/* Hero Section modernisée avec SVG dynamique */}
       <section className="relative overflow-hidden py-24 bg-gradient-to-br from-anthracite to-dark-gray text-white">
         <svg className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 opacity-40" width="900" height="400" viewBox="0 0 900 400" fill="none" xmlns="http://www.w3.org/2000/svg">
