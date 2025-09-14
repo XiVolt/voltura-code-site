@@ -89,7 +89,7 @@ const ContactPage = () => {
           .from('messages')
           .insert([
             {
-              sender_id: 'anonymous', // Anonymous contact
+                sender_id: user?.id, // UUID de l'utilisateur connecté
               subject: `[Contact] ${formData.subject}`,
               content: `
 Nom: ${formData.name}
