@@ -94,7 +94,38 @@ const MessagesPage = () => {
             {received.length === 0 ? <div>Aucun message reçu.</div> : (
               <div className="space-y-6 mb-10">
                 {received.map((msg) => {
+                  const [showReply, setShowReply] = useState(false);
+                  const [replySubject, setReplySubject] = useState('');
+                  const [replyContent, setReplyContent] = useState('');
+                  const [replyLoading, setReplyLoading] = useState(false);
+                  const [replyError, setReplyError] = useState<string | null>(null);
+                  const [replySuccess, setReplySuccess] = useState(false);
                   const email = extractEmail(msg.content);
+                  const handleReply = async () => {
+                    setReplyLoading(true);
+                    setReplyError(null);
+                    try {
+                      const { error } = await supabase.from('messages').insert([
+                        {
+                          sender_id: user.id,
+                          receiver_id: msg.sender_id,
+                          subject: replySubject || `Re: ${msg.subject}`,
+                          content: replyContent,
+                        },
+                      ]);
+                      if (error) setReplyError("Erreur lors de l'envoi de la réponse");
+                      else {
+                        setReplySuccess(true);
+                        setReplyContent('');
+                        setReplySubject('');
+                        setShowReply(false);
+                      }
+                    } catch (e) {
+                      setReplyError("Erreur inattendue");
+                    } finally {
+                      setReplyLoading(false);
+                    }
+                  };
                   return (
                     <Card key={msg.id} className={`p-6 border-l-4 ${msg.is_read ? 'border-gray-300' : 'border-electric-blue'} bg-white/90`}>
                       <div className="flex justify-between items-center mb-2">
@@ -108,12 +139,39 @@ const MessagesPage = () => {
                           {msg.is_read ? 'Marquer comme non lu' : 'Marquer comme lu'}
                         </Button>
                         <Button size="sm" variant="outline" className="!text-red-600 border-red-300 hover:bg-red-50" onClick={() => deleteMessage(msg.id, "received")}>Supprimer</Button>
-                        {email && (
-                          <a href={`mailto:${email}?subject=Réponse à votre message Voltura Code`}>
-                            <Button size="sm" variant="secondary">Répondre</Button>
-                          </a>
+                        {user && user.role === 'admin' && (
+                          <Button size="sm" variant="secondary" onClick={() => setShowReply((v) => !v)}>
+                            {showReply ? 'Annuler' : 'Répondre'}
+                          </Button>
                         )}
                       </div>
+                      {showReply && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div className="mb-2">
+                            <input
+                              type="text"
+                              className="w-full border px-3 py-2 rounded mb-2"
+                              placeholder="Sujet"
+                              value={replySubject}
+                              onChange={e => setReplySubject(e.target.value)}
+                            />
+                            <textarea
+                              className="w-full border px-3 py-2 rounded mb-2"
+                              placeholder="Votre réponse..."
+                              rows={3}
+                              value={replyContent}
+                              onChange={e => setReplyContent(e.target.value)}
+                            />
+                          </div>
+                          {replyError && <div className="text-red-600 text-sm mb-2">{replyError}</div>}
+                          <Button size="sm" loading={replyLoading} onClick={handleReply}>
+                            Envoyer la réponse
+                          </Button>
+                        </div>
+                      )}
+                      {replySuccess && (
+                        <div className="text-green-600 text-sm mt-2">Réponse envoyée !</div>
+                      )}
                       <div className="text-xs text-gray-500 mt-2">Expéditeur: {msg.sender_id}</div>
                     </Card>
                   );
