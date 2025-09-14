@@ -121,7 +121,6 @@ const MessagesPage = () => {
     const fetchAll = async () => {
       setLoading(true);
       const u = await getCurrentUser();
-      // On récupère le profil Supabase pour le rôle
       let profile = null;
       if (u) {
         const { data: prof } = await supabase
@@ -137,30 +136,38 @@ const MessagesPage = () => {
         return;
       }
       const isAdmin = profile.role === 'admin';
-      let rec, errRec, sentData, errSent;
+      let rec = [], errRec, sentData = [], errSent;
       if (isAdmin) {
-        const res = await supabase
+        // Messages reçus : tous les messages où receiver_id = admin.id
+        const recRes = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
+          .eq("receiver_id", profile.id)
           .order("created_at", { ascending: false });
-        rec = res.data;
-        errRec = res.error;
-        sentData = res.data;
-        errSent = res.error;
+        rec = recRes.data || [];
+        errRec = recRes.error;
+        // Messages envoyés : tous les messages où sender_id = admin.id
+        const sentRes = await supabase
+          .from("messages")
+          .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
+          .eq("sender_id", profile.id)
+          .order("created_at", { ascending: false });
+        sentData = sentRes.data || [];
+        errSent = sentRes.error;
       } else {
         const res = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
           .eq("receiver_id", profile.id)
           .order("created_at", { ascending: false });
-        rec = res.data;
+  rec = res.data || [];
         errRec = res.error;
         const sentRes = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
           .eq("sender_id", profile.id)
           .order("created_at", { ascending: false });
-        sentData = sentRes.data;
+  sentData = sentRes.data || [];
         errSent = sentRes.error;
       }
       if (errRec || errSent) setError("Erreur lors du chargement des messages");
@@ -175,11 +182,8 @@ const MessagesPage = () => {
 
   const updateIsRead = async (id: string, isRead: boolean) => {
     const { error } = await supabase.from("messages").update({ is_read: isRead }).eq("id", id);
-    // On recharge la liste après update
     if (!error) {
-      // On relance fetchAll pour tout resynchroniser
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      window.location.reload();
+      setReceived((msgs: any[]) => msgs.map((m: any) => m.id === id ? { ...m, is_read: isRead } : m));
     }
   };
 
