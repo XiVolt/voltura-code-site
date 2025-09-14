@@ -29,15 +29,18 @@ const MessagesPage = () => {
       }
       // Détection admin (user.user_metadata.role ou user.role)
       const isAdmin = u?.user_metadata?.role === 'admin' || u?.role === 'admin';
-      let rec, errRec;
+      let rec, errRec, sentData, errSent;
       if (isAdmin) {
-        // Admin : voir tous les messages reçus
+        // Admin : voir tous les messages reçus (tous les messages)
         const res = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
           .order("created_at", { ascending: false });
         rec = res.data;
         errRec = res.error;
+        // Admin : voir tous les messages envoyés (tous les messages)
+        sentData = res.data;
+        errSent = res.error;
       } else {
         // Utilisateur : voir seulement ses messages reçus
         const res = await supabase
@@ -47,13 +50,15 @@ const MessagesPage = () => {
           .order("created_at", { ascending: false });
         rec = res.data;
         errRec = res.error;
+        // Messages envoyés par l'utilisateur
+        const sentRes = await supabase
+          .from("messages")
+          .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
+          .eq("sender_id", u.id)
+          .order("created_at", { ascending: false });
+        sentData = sentRes.data;
+        errSent = sentRes.error;
       }
-      // Messages envoyés
-      const { data: sentData, error: errSent } = await supabase
-        .from("messages")
-        .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
-        .eq("sender_id", u.id)
-        .order("created_at", { ascending: false });
       if (errRec || errSent) setError("Erreur lors du chargement des messages");
       else {
         setReceived(rec || []);
