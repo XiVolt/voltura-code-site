@@ -6,11 +6,13 @@
 // Nouveau composant pour chaque message reçu avec gestion du formulaire de réponse
 function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshMessages }: { msg: any, user: any, updateIsRead: any, deleteMessage: any, refreshMessages?: () => void }) {
   const [showReply, setShowReply] = React.useState(false);
-  // On considère admin si user?.role === 'admin' (profil Supabase)
+  const [loading, setLoading] = React.useState(false);
   const isAdmin = user && user.role === 'admin';
   const handleUpdateIsRead = async () => {
+    setLoading(true);
     await updateIsRead(msg.id, !msg.is_read);
-    refreshMessages && refreshMessages();
+    if (refreshMessages) await refreshMessages();
+    setLoading(false);
   };
   const handleDelete = async () => {
     await deleteMessage(msg.id, "received");
@@ -25,7 +27,7 @@ function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshM
       <div className="mb-2 text-sm text-gray-700 whitespace-pre-line">{msg.content}</div>
       <div className="flex flex-wrap gap-2 items-center mt-2">
         <span className={`text-xs font-semibold ${msg.is_read ? 'text-gray-400' : 'text-green-600'}`}>{msg.is_read ? 'Lu' : 'Non lu'}</span>
-        <Button size="sm" variant="outline" onClick={handleUpdateIsRead}>
+        <Button size="sm" variant="outline" onClick={handleUpdateIsRead} disabled={loading}>
           {msg.is_read ? 'Marquer comme non lu' : 'Marquer comme lu'}
         </Button>
         <Button size="sm" variant="outline" className="!text-red-600 border-red-300 hover:bg-red-50" onClick={handleDelete}>Supprimer</Button>
@@ -183,7 +185,30 @@ const MessagesPage = () => {
   const updateIsRead = async (id: string, isRead: boolean) => {
     const { error } = await supabase.from("messages").update({ is_read: isRead }).eq("id", id);
     if (!error) {
-      setReceived((msgs: any[]) => msgs.map((m: any) => m.id === id ? { ...m, is_read: isRead } : m));
+      // Refetch la liste pour garantir la synchro
+      const u = user;
+      if (u) {
+        const isAdmin = u.role === 'admin';
+        let rec = [], errRec;
+        if (isAdmin) {
+          const recRes = await supabase
+            .from("messages")
+            .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
+            .eq("receiver_id", u.id)
+            .order("created_at", { ascending: false });
+          rec = recRes.data || [];
+          errRec = recRes.error;
+        } else {
+          const res = await supabase
+            .from("messages")
+            .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
+            .eq("receiver_id", u.id)
+            .order("created_at", { ascending: false });
+          rec = res.data || [];
+          errRec = res.error;
+        }
+        if (!errRec) setReceived(rec);
+      }
     }
   };
 
