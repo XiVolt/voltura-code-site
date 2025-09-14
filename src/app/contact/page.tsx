@@ -1,8 +1,9 @@
+
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { Mail, Phone, Clock, Send, CheckCircle } from 'lucide-react'
+import { supabase, getCurrentUser } from '@/lib/supabase'
 import { validateEmail } from '@/lib/utils'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -10,11 +11,21 @@ import Textarea from '@/components/ui/Textarea'
 import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
 
-import { getCurrentUser } from '@/lib/supabase'
 
 const ContactPage = () => {
   const [user, setUser] = useState<any>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    company: '',
+    subject: '',
+    message: '',
+    projectType: ''
+  })
+  const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -24,87 +35,74 @@ const ContactPage = () => {
     }
     fetchUser()
   }, [])
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    subject: '',
-    message: '',
-    projectType: ''
-  })
-  const [errors, setErrors] = useState<{[key: string]: string}>({})
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
 
   const projectTypes = [
-  { value: '', label: 'Sélectionnez un type de projet' },
-  { value: 'web-app', label: 'Application Web' },
-  { value: 'vitrine', label: 'Site Vitrine' },
-  { value: 'lua-fivem', label: 'Développement Lua FiveM' },
-  { value: 'maintenance', label: 'Maintenance / Support' },
-  { value: 'other', label: 'Autre' }
+    { value: '', label: 'Sélectionnez un type de projet' },
+    { value: 'web-app', label: 'Application Web' },
+    { value: 'vitrine', label: 'Site Vitrine' },
+    { value: 'lua-fivem', label: 'Développement Lua FiveM' },
+    { value: 'maintenance', label: 'Maintenance / Support' },
+    { value: 'other', label: 'Autre' }
   ]
 
   const validate = () => {
-    const newErrors: {[key: string]: string} = {}
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'Le nom est requis'
-    }
-    
-    if (!formData.email) {
-      newErrors.email = 'L\'email est requis'
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Format d\'email invalide'
-    }
-    
-    if (!formData.subject.trim()) {
-      newErrors.subject = 'Le sujet est requis'
-    }
-    
-    if (!formData.message.trim()) {
-      newErrors.message = 'Le message est requis'
-    } else if (formData.message.trim().length < 20) {
-      newErrors.message = 'Le message doit contenir au moins 20 caractères'
-    }
-    
+    const newErrors: { [key: string]: string } = {}
+    if (!formData.name.trim()) newErrors.name = 'Le nom est requis'
+    if (!formData.email) newErrors.email = "L'email est requis"
+    else if (!validateEmail(formData.email)) newErrors.email = "Format d'email invalide"
+    if (!formData.subject.trim()) newErrors.subject = 'Le sujet est requis'
+    if (!formData.message.trim()) newErrors.message = 'Le message est requis'
+    else if (formData.message.trim().length < 20) newErrors.message = 'Le message doit contenir au moins 20 caractères'
     return newErrors
+  }
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     const validationErrors = validate()
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors)
       return
     }
-    
     setLoading(true)
     setErrors({})
-    
     try {
-      // Insert message into database
-        const { data, error } = await supabase
-          .from('messages')
-          .insert([
-            {
-                sender_id: user?.id, // UUID de l'utilisateur connecté
-              subject: `[Contact] ${formData.subject}`,
-              content: `
-Nom: ${formData.name}
-Email: ${formData.email}
-${formData.company ? `Entreprise: ${formData.company}` : ''}
-${formData.projectType ? `Type de projet: ${projectTypes.find(t => t.value === formData.projectType)?.label}` : ''}
-
-Message:
-${formData.message}
-            `.trim()
-            }
-          ])
-      
+      // Récupérer l'ID de l'admin
+      const { data: adminProfiles, error: adminError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1)
+      if (adminError || !adminProfiles || adminProfiles.length === 0) {
+        setErrors({ general: "Impossible de trouver l'admin pour l'envoi du message." })
+        setLoading(false)
+        return
+      }
+      const adminId = adminProfiles[0].id
+      const { error } = await supabase
+        .from('messages')
+        .insert([
+          {
+            sender_id: user?.id,
+            receiver_id: adminId,
+            subject: `[Contact] ${formData.subject}`,
+            content: [
+              `Nom: ${formData.name}`,
+              `Email: ${formData.email}`,
+              formData.company ? `Entreprise: ${formData.company}` : '',
+              formData.projectType ? `Type de projet: ${projectTypes.find(t => t.value === formData.projectType)?.label}` : '',
+              '',
+              'Message:',
+              formData.message
+            ].filter(Boolean).join('\n').trim()
+          }
+        ])
       if (error) {
-        setErrors({ general: 'Erreur lors de l\'envoi du message' })
+        setErrors({ general: "Erreur lors de l'envoi du message" })
       } else {
         setSuccess(true)
         setFormData({
@@ -117,16 +115,9 @@ ${formData.message}
         })
       }
     } catch (error) {
-      setErrors({ general: 'Une erreur inattendue s\'est produite' })
+      setErrors({ general: "Une erreur inattendue s'est produite" })
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
 
