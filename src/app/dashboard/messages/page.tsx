@@ -6,8 +6,16 @@
 // Nouveau composant pour chaque message reçu avec gestion du formulaire de réponse
 function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshMessages }: { msg: any, user: any, updateIsRead: any, deleteMessage: any, refreshMessages?: () => void }) {
   const [showReply, setShowReply] = React.useState(false);
-  // Détection admin robuste
   const isAdmin = user && (user.role === 'admin' || user.user_metadata?.role === 'admin');
+  // Pour chaque action, on recharge la liste après
+  const handleUpdateIsRead = async () => {
+    await updateIsRead(msg.id, !msg.is_read);
+    refreshMessages && refreshMessages();
+  };
+  const handleDelete = async () => {
+    await deleteMessage(msg.id, "received");
+    refreshMessages && refreshMessages();
+  };
   return (
     <Card className={`p-6 border-l-4 ${msg.is_read ? 'border-gray-300' : 'border-electric-blue'} bg-white/90`}>
       <div className="flex justify-between items-center mb-2">
@@ -17,10 +25,10 @@ function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshM
       <div className="mb-2 text-sm text-gray-700 whitespace-pre-line">{msg.content}</div>
       <div className="flex flex-wrap gap-2 items-center mt-2">
         <span className={`text-xs font-semibold ${msg.is_read ? 'text-gray-400' : 'text-green-600'}`}>{msg.is_read ? 'Lu' : 'Non lu'}</span>
-        <Button size="sm" variant="outline" onClick={() => updateIsRead(msg.id, !msg.is_read)}>
+        <Button size="sm" variant="outline" onClick={handleUpdateIsRead}>
           {msg.is_read ? 'Marquer comme non lu' : 'Marquer comme lu'}
         </Button>
-        <Button size="sm" variant="outline" className="!text-red-600 border-red-300 hover:bg-red-50" onClick={() => deleteMessage(msg.id, "received")}>Supprimer</Button>
+        <Button size="sm" variant="outline" className="!text-red-600 border-red-300 hover:bg-red-50" onClick={handleDelete}>Supprimer</Button>
         {isAdmin && (
           <Button size="sm" variant="secondary" onClick={() => setShowReply((v) => !v)}>
             {showReply ? 'Annuler' : 'Répondre'}
