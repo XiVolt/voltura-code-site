@@ -6,8 +6,8 @@
 // Nouveau composant pour chaque message reçu avec gestion du formulaire de réponse
 function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshMessages }: { msg: any, user: any, updateIsRead: any, deleteMessage: any, refreshMessages?: () => void }) {
   const [showReply, setShowReply] = React.useState(false);
-  const isAdmin = user && (user.role === 'admin' || user.user_metadata?.role === 'admin');
-  // Pour chaque action, on recharge la liste après
+  // On considère admin si user?.role === 'admin' (profil Supabase)
+  const isAdmin = user && user.role === 'admin';
   const handleUpdateIsRead = async () => {
     await updateIsRead(msg.id, !msg.is_read);
     refreshMessages && refreshMessages();
@@ -121,39 +121,44 @@ const MessagesPage = () => {
     const fetchAll = async () => {
       setLoading(true);
       const u = await getCurrentUser();
-      setUser(u);
-      if (!u) {
+      // On récupère le profil Supabase pour le rôle
+      let profile = null;
+      if (u) {
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('id, role')
+          .eq('id', u.id)
+          .single();
+        profile = prof;
+      }
+      setUser(profile);
+      if (!profile) {
         setLoading(false);
         return;
       }
-      // Détection admin (user.user_metadata.role ou user.role)
-      const isAdmin = u?.user_metadata?.role === 'admin' || u?.role === 'admin';
+      const isAdmin = profile.role === 'admin';
       let rec, errRec, sentData, errSent;
       if (isAdmin) {
-        // Admin : voir tous les messages reçus (tous les messages)
         const res = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
           .order("created_at", { ascending: false });
         rec = res.data;
         errRec = res.error;
-        // Admin : voir tous les messages envoyés (tous les messages)
         sentData = res.data;
         errSent = res.error;
       } else {
-        // Utilisateur : voir seulement ses messages reçus
         const res = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
-          .eq("receiver_id", u.id)
+          .eq("receiver_id", profile.id)
           .order("created_at", { ascending: false });
         rec = res.data;
         errRec = res.error;
-        // Messages envoyés par l'utilisateur
         const sentRes = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
-          .eq("sender_id", u.id)
+          .eq("sender_id", profile.id)
           .order("created_at", { ascending: false });
         sentData = sentRes.data;
         errSent = sentRes.error;
@@ -170,29 +175,11 @@ const MessagesPage = () => {
 
   const updateIsRead = async (id: string, isRead: boolean) => {
     const { error } = await supabase.from("messages").update({ is_read: isRead }).eq("id", id);
+    // On recharge la liste après update
     if (!error) {
-      // Recharge les messages pour refléter l'état réel
-      if (user) {
-        const isAdmin = user?.user_metadata?.role === 'admin' || user?.role === 'admin';
-        let rec, errRec;
-        if (isAdmin) {
-          const res = await supabase
-            .from("messages")
-            .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
-            .order("created_at", { ascending: false });
-          rec = res.data;
-          errRec = res.error;
-        } else {
-          const res = await supabase
-            .from("messages")
-            .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
-            .eq("receiver_id", user.id)
-            .order("created_at", { ascending: false });
-          rec = res.data;
-          errRec = res.error;
-        }
-        if (!errRec) setReceived(rec || []);
-      }
+      // On relance fetchAll pour tout resynchroniser
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      window.location.reload();
     }
   };
 
