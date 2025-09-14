@@ -54,35 +54,35 @@ const HomePage = () => {
 
   return (
     <ClientLayout>
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-anthracite via-dark-gray to-anthracite text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-electric-blue/10 to-volt-yellow/10"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="inline-flex items-center px-4 py-2 bg-electric-blue/20 rounded-full text-sm font-medium">
-                <Zap className="w-4 h-4 mr-2 text-volt-yellow" />
+      {/* Hero Section modernisée avec SVG dynamique */}
+      <section className="relative overflow-hidden py-28 bg-gradient-to-br from-anthracite via-dark-gray to-anthracite text-white">
+        <svg className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 opacity-40" width="900" height="400" viewBox="0 0 900 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="450" cy="200" rx="400" ry="120" fill="#3B82F6" fillOpacity="0.25"/>
+          <ellipse cx="600" cy="100" rx="180" ry="60" fill="#FACC15" fillOpacity="0.18"/>
+        </svg>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col lg:flex-row gap-16 items-center justify-between">
+            <div className="flex-1 space-y-10">
+              <div className="inline-flex items-center px-5 py-2 bg-electric-blue/20 rounded-full text-base font-medium animate-pulse">
+                <Zap className="w-5 h-5 mr-2 text-volt-yellow animate-bounce" />
                 Solutions de développement innovantes
               </div>
-              
-              <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
+              <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight drop-shadow-lg">
                 Transformez vos{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-blue to-volt-yellow">
                   idées
                 </span>{' '}
                 en applications performantes
               </h1>
-              
-              <p className="text-xl text-gray-300 max-w-2xl">
-                Voltura Code vous accompagne dans la création d'applications web modernes, 
-                sécurisées et optimisées. Du concept au déploiement, nous donnons vie à vos projets.
+              <p className="text-2xl text-gray-200 max-w-2xl font-light">
+                Voltura Code vous accompagne dans la création d'applications web modernes, sécurisées et optimisées.<br />
+                Du concept au déploiement, on donne vie à vos projets avec style.
               </p>
-              
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/contact">
-                  <Button size="lg" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto hover:scale-105 transition-transform">
                     Commencer un projet
-                    <ArrowRight className="w-5 h-5 ml-2" />
+                    <ArrowRight className="w-5 h-5 ml-2 animate-bounce" />
                   </Button>
                 </Link>
                 <Link href="/prestations">
@@ -91,10 +91,8 @@ const HomePage = () => {
                   </Button>
                 </Link>
               </div>
-
-              {/* Social Links */}
               <div className="flex items-center space-x-6 pt-4">
-                <span className="text-sm text-gray-400">Retrouvez-nous sur :</span>
+                <span className="text-base text-gray-300">Retrouvez-nous sur :</span>
                 {socialLinks.map((social) => {
                   const Icon = social.icon
                   return (
@@ -103,27 +101,27 @@ const HomePage = () => {
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`text-gray-400 ${social.color} transition-colors p-2`}
+                      className={`text-gray-400 ${social.color} transition-colors p-2 hover:scale-125`}
                       aria-label={social.name}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-6 h-6" />
                     </a>
                   )
                 })}
               </div>
             </div>
-            
-            <div className="relative lg:ml-8">
+            {/* Bloc code stylisé modernisé */}
+            <div className="flex-1 flex justify-center">
               <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-2xl blur opacity-20"></div>
-                <div className="relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8">
+                <div className="absolute -inset-6 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-2xl blur opacity-30"></div>
+                <div className="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-10 shadow-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
                       <div className="w-3 h-3 bg-volt-yellow rounded-full"></div>
                       <div className="w-3 h-3 bg-electric-blue rounded-full"></div>
                       <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
                     </div>
-                    <div className="bg-anthracite/80 rounded-lg p-4 font-mono text-sm">
+                    <div className="bg-anthracite/80 rounded-lg p-4 font-mono text-base">
                       <div className="text-volt-yellow">const voltura = {`{`}</div>
                       <div className="text-white ml-4">expertise: <span className="text-electric-blue">'Full-Stack'</span>,</div>
                       <div className="text-white ml-4">technologies: [</div>
@@ -189,7 +187,7 @@ const HomePage = () => {
               <p className="text-gray-600 mb-4">
                 Applications web modernes avec React, Next.js et les meilleures pratiques du développement.
               </p>
-              <div className="text-sm text-gray-500 mb-4">À partir de 2 500€</div>
+              <div className="text-sm text-gray-500 mb-4">À partir de 900€</div>
               <Link href="/prestations">
                 <Button variant="outline" className="w-full">
                   En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
@@ -217,7 +215,7 @@ const HomePage = () => {
               <p className="text-gray-600 mb-4">
                 Maintenance continue, mises à jour sécurité et support technique pour vos applications.
               </p>
-              <div className="text-sm text-gray-500 mb-4">À partir de 150€/mois</div>
+              <div className="text-sm text-gray-500 mb-4">À partir de 80€/mois</div>
               <Link href="/prestations">
                 <Button variant="outline" className="w-full">
                   En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
@@ -228,36 +226,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-anthracite mb-4">
-              Ils nous font confiance
-            </h2>
-            <p className="text-xl text-gray-600">
-              Découvrez les témoignages de nos clients satisfaits
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {testimonials.map((testimonial, index) => (
-              <Card key={index} className="hover:shadow-xl transition-shadow">
-                <div className="flex items-center mb-4">
-                  {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-volt-yellow text-volt-yellow" />
-                  ))}
-                </div>
-                <p className="text-gray-600 mb-6 italic">"{testimonial.content}"</p>
-                <div>
-                  <div className="font-semibold text-anthracite">{testimonial.name}</div>
-                  <div className="text-sm text-gray-500">{testimonial.role}</div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* Testimonials section supprimée (aucun client pour l'instant) */}
 
       {/* CTA Section */}
       <section className="py-24 bg-gradient-to-r from-electric-blue to-blue-700 text-white">

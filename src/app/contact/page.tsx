@@ -24,14 +24,12 @@ const ContactPage = () => {
   const [success, setSuccess] = useState(false)
 
   const projectTypes = [
-    { value: '', label: 'Sélectionnez un type de projet' },
-    { value: 'web-app', label: 'Application Web' },
-    { value: 'business-app', label: 'Application Métier' },
-    { value: 'ecommerce', label: 'E-commerce' },
-    { value: 'api', label: 'API / Backend' },
-    { value: 'maintenance', label: 'Maintenance / Support' },
-    { value: 'consulting', label: 'Conseil / Audit' },
-    { value: 'other', label: 'Autre' }
+  { value: '', label: 'Sélectionnez un type de projet' },
+  { value: 'web-app', label: 'Application Web' },
+  { value: 'vitrine', label: 'Site Vitrine' },
+  { value: 'lua-fivem', label: 'Développement Lua FiveM' },
+  { value: 'maintenance', label: 'Maintenance / Support' },
+  { value: 'other', label: 'Autre' }
   ]
 
   const validate = () => {
@@ -74,13 +72,13 @@ const ContactPage = () => {
     
     try {
       // Insert message into database
-      const { data, error } = await supabase
-        .from('messages')
-        .insert([
-          {
-            sender_id: null, // Anonymous contact
-            subject: `[Contact] ${formData.subject}`,
-            content: `
+        const { data, error } = await supabase
+          .from('messages')
+          .insert([
+            {
+              sender_id: 'anonymous', // Anonymous contact
+              subject: `[Contact] ${formData.subject}`,
+              content: `
 Nom: ${formData.name}
 Email: ${formData.email}
 ${formData.company ? `Entreprise: ${formData.company}` : ''}
@@ -89,8 +87,8 @@ ${formData.projectType ? `Type de projet: ${projectTypes.find(t => t.value === f
 Message:
 ${formData.message}
             `.trim()
-          }
-        ])
+            }
+          ])
       
       if (error) {
         setErrors({ general: 'Erreur lors de l\'envoi du message' })
@@ -140,186 +138,157 @@ ${formData.message}
 
   return (
     <ClientLayout>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-anthracite to-dark-gray text-white py-24">
+      {/* Hero Section modernisée avec SVG dynamique */}
+      <section className="relative overflow-hidden py-24 bg-gradient-to-br from-anthracite to-dark-gray text-white">
+        <svg className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 opacity-40" width="900" height="400" viewBox="0 0 900 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="450" cy="200" rx="400" ry="120" fill="#3B82F6" fillOpacity="0.25"/>
+          <ellipse cx="600" cy="100" rx="180" ry="60" fill="#FACC15" fillOpacity="0.18"/>
+        </svg>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+            <h1 className="text-5xl lg:text-6xl font-extrabold mb-6 tracking-tight drop-shadow-lg">
               Contactez-nous
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Vous avez un projet ? Une question ? N'hésitez pas à nous contacter. 
-              Nous sommes là pour vous accompagner dans la réalisation de vos ambitions digitales.
+            <p className="text-2xl text-gray-200 max-w-2xl mx-auto font-light">
+              Un projet, une idée, une question&nbsp;?<br />
+              On vous répond avec le sourire et un brin de fun&nbsp;!
             </p>
           </div>
         </div>
       </section>
 
-      <section className="py-24 bg-light-gray">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-3 gap-12">
-            {/* Contact Info */}
-            <div className="space-y-8">
-              <Card>
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-electric-blue rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-anthracite mb-1">Email</h3>
-                    <p className="text-gray-600">contact@voltura-code.com</p>
-                    <p className="text-sm text-gray-500 mt-1">Réponse sous 24h</p>
-                  </div>
+      <section className="relative py-24 bg-light-gray">
+        {/* Blob décoratif */}
+        <svg className="absolute -top-24 -left-32 w-96 h-96 opacity-30 -z-10" viewBox="0 0 400 400" fill="none"><ellipse cx="200" cy="200" rx="200" ry="120" fill="#FACC15"/></svg>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-16 items-stretch">
+          {/* Contact Info modernisée, cards décalées */}
+          <div className="flex flex-col gap-10 lg:w-1/2">
+            <Card className="shadow-xl hover:scale-105 transition-transform duration-300 bg-white/80 backdrop-blur-md border-2 border-electric-blue -rotate-2">
+              <div className="flex items-center gap-5">
+                <Mail className="w-8 h-8 text-electric-blue animate-bounce" />
+                <div>
+                  <h3 className="font-bold text-anthracite text-lg">Email</h3>
+                  <p className="text-gray-700 text-base">voltura<strong>code</strong>@gmail.com</p>
+                  <p className="text-xs text-gray-500 mt-1">Réponse sous 24h</p>
                 </div>
-              </Card>
-
-              <Card>
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-volt-yellow rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-5 h-5 text-anthracite" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-anthracite mb-1">Téléphone</h3>
-                    <p className="text-gray-600">+33 (0)1 23 45 67 89</p>
-                    <p className="text-sm text-gray-500 mt-1">Lun-Ven 9h-18h</p>
-                  </div>
+              </div>
+            </Card>
+            <Card className="shadow-xl hover:scale-105 transition-transform duration-300 bg-white/80 backdrop-blur-md border-2 border-volt-yellow rotate-2">
+              <div className="flex items-center gap-5">
+                <Phone className="w-8 h-8 text-volt-yellow animate-pulse" />
+                <div>
+                  <h3 className="font-bold text-anthracite text-lg">Téléphone</h3>
+                  <p className="text-gray-700 text-base">+33 7 85 40 82 49</p>
+                  <p className="text-xs text-gray-500 mt-1">Disponible 7j/7 (pas d'appel la semaine entre 8h et 18h)</p>
                 </div>
-              </Card>
-
-              <Card>
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-electric-blue rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-anthracite mb-1">Localisation</h3>
-                    <p className="text-gray-600">France</p>
-                    <p className="text-sm text-gray-500 mt-1">Interventions à distance</p>
-                  </div>
+              </div>
+            </Card>
+            <Card className="shadow-xl hover:scale-105 transition-transform duration-300 bg-white/80 backdrop-blur-md border-2 border-electric-blue -rotate-3">
+              <div className="flex items-center gap-5">
+                <Clock className="w-8 h-8 text-electric-blue animate-spin-slow" />
+                <div>
+                  <h3 className="font-bold text-anthracite text-lg">Disponibilité</h3>
+                  <p className="text-gray-700 text-base">Toute la semaine (7j/7)</p>
+                  <p className="text-xs text-gray-500 mt-1">Pas d'appel la semaine entre 8h et 18h</p>
                 </div>
-              </Card>
-
-              <Card>
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-volt-yellow rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-5 h-5 text-anthracite" />
+              </div>
+            </Card>
+          </div>
+          {/* Contact Form modernisé */}
+          <div className="flex-1 flex items-center">
+            <Card className="w-full shadow-2xl border-2 border-anthracite bg-white/90 backdrop-blur-lg hover:shadow-electric-blue/30 transition-all duration-300">
+              <div className="mb-8 text-center">
+                <h2 className="text-3xl font-extrabold text-anthracite mb-2 tracking-tight">Décrivez votre projet ou besoin</h2>
+                <p className="text-gray-600 text-base">
+                  Voltura Code propose : <span className="font-semibold text-electric-blue">développement web</span>, <span className="font-semibold text-volt-yellow">site vitrine</span>, <span className="font-semibold text-electric-blue">scripts Lua FiveM</span>, <span className="font-semibold text-volt-yellow">maintenance/support</span>.<br />
+                  Précisez votre demande pour une réponse rapide et adaptée !
+                </p>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {errors.general && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                    {errors.general}
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-anthracite mb-1">Disponibilité</h3>
-                    <p className="text-gray-600">Lundi - Vendredi</p>
-                    <p className="text-sm text-gray-500 mt-1">9h00 - 18h00</p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            {/* Contact Form */}
-            <div className="lg:col-span-2">
-              <Card>
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-anthracite mb-2">
-                    Décrivez votre projet
-                  </h2>
-                  <p className="text-gray-600">
-                    Plus vous êtes précis, plus nous pourrons vous proposer une solution adaptée.
-                  </p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {errors.general && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                      {errors.general}
-                    </div>
-                  )}
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Input
-                      label="Nom complet *"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
-                      error={errors.name}
-                      placeholder="Votre nom"
-                      required
-                    />
-
-                    <Input
-                      label="Adresse email *"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleChange('email', e.target.value)}
-                      error={errors.email}
-                      placeholder="votre@email.com"
-                      required
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <Input
-                      label="Entreprise"
-                      type="text"
-                      value={formData.company}
-                      onChange={(e) => handleChange('company', e.target.value)}
-                      placeholder="Nom de votre entreprise"
-                    />
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-anthracite">
-                        Type de projet
-                      </label>
-                      <select
-                        value={formData.projectType}
-                        onChange={(e) => handleChange('projectType', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-electric-blue focus:border-electric-blue outline-none transition-colors"
-                      >
-                        {projectTypes.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
+                )}
+                <div className="grid md:grid-cols-2 gap-6">
                   <Input
-                    label="Sujet *"
+                    label="Nom complet *"
                     type="text"
-                    value={formData.subject}
-                    onChange={(e) => handleChange('subject', e.target.value)}
-                    error={errors.subject}
-                    placeholder="Résumé de votre demande"
+                    value={formData.name}
+                    onChange={(e) => handleChange('name', e.target.value)}
+                    error={errors.name}
+                    placeholder="Votre nom"
                     required
                   />
-
-                  <Textarea
-                    label="Message *"
-                    value={formData.message}
-                    onChange={(e) => handleChange('message', e.target.value)}
-                    error={errors.message}
-                    placeholder="Décrivez votre projet, vos besoins, votre budget prévisionnel, vos délais..."
-                    rows={6}
+                  <Input
+                    label="Adresse email *"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    error={errors.email}
+                    placeholder="votre@email.com"
                     required
                   />
-
-                  <Button
-                    type="submit"
-                    loading={loading}
-                    size="lg"
-                    className="w-full"
-                  >
-                    <Send className="w-5 h-5 mr-2" />
-                    Envoyer le message
-                  </Button>
-                </form>
-
-                <div className="mt-6 p-4 bg-electric-blue/10 rounded-lg">
-                  <p className="text-sm text-anthracite">
-                    <strong>Réponse garantie sous 24h</strong> - Nous nous engageons à vous répondre rapidement 
-                    avec un premier retour sur votre projet et les prochaines étapes.
-                  </p>
                 </div>
-              </Card>
-            </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Input
+                    label="Entreprise"
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => handleChange('company', e.target.value)}
+                    placeholder="Nom de votre entreprise"
+                  />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-anthracite">
+                      Type de projet
+                    </label>
+                    <select
+                      value={formData.projectType}
+                      onChange={(e) => handleChange('projectType', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-electric-blue focus:border-electric-blue outline-none transition-colors"
+                    >
+                      {projectTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <Input
+                  label="Sujet *"
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => handleChange('subject', e.target.value)}
+                  error={errors.subject}
+                  placeholder="Résumé de votre demande"
+                  required
+                />
+                <Textarea
+                  label="Message *"
+                  value={formData.message}
+                  onChange={(e) => handleChange('message', e.target.value)}
+                  error={errors.message}
+                  placeholder="Décrivez votre projet, vos besoins, votre budget prévisionnel, vos délais..."
+                  rows={6}
+                  required
+                />
+                <Button
+                  type="submit"
+                  loading={loading}
+                  size="lg"
+                  className="w-full hover:scale-105 transition-transform duration-200"
+                >
+                  <Send className="w-5 h-5 mr-2 animate-bounce" />
+                  Envoyer le message
+                </Button>
+              </form>
+              <div className="mt-6 p-4 bg-electric-blue/10 rounded-lg">
+                <p className="text-sm text-anthracite">
+                  <strong>Réponse garantie sous 24h</strong> - On revient vers vous vite, promis&nbsp;!
+                </p>
+              </div>
+            </Card>
           </div>
         </div>
       </section>

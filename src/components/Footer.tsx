@@ -9,17 +9,17 @@ const Footer: React.FC = () => {
     {
       name: 'GitHub',
       icon: Github,
-      href: 'https://github.com', // À remplacer par votre lien GitHub
+      href: 'https://github.com/XiVolt', // À remplacer par votre lien GitHub
     },
     {
       name: 'LinkedIn',
       icon: Linkedin,
-      href: 'https://linkedin.com', // À remplacer par votre lien LinkedIn
+      href: 'https://www.linkedin.com/in/tristan-bras-3434a82a6', // À remplacer par votre lien LinkedIn
     },
     {
       name: 'Discord',
       icon: MessageSquare,
-      href: 'https://discord.com', // À remplacer par votre lien Discord
+      href: 'https://discord.gg/nucT9x5Q', // À remplacer par votre lien Discord
     },
   ]
 
@@ -88,11 +88,11 @@ const Footer: React.FC = () => {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-electric-blue" />
-                <span className="text-gray-300">contact@voltura-code.com</span>
+                <span className="text-gray-300">volturacode@gmail.com</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-electric-blue" />
-                <span className="text-gray-300">+33 (0)1 23 45 67 89</span>
+                <span className="text-gray-300">+33 (0)7 85 40 82 49</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-electric-blue" />

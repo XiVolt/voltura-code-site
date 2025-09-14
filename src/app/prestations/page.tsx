@@ -21,7 +21,7 @@ const PrestationsPage = () => {
         'SEO Optimisé',
         'Performance élevée'
       ],
-      price: 'À partir de 2 500€',
+      price: 'À partir de 900€',
       popular: true
     },
     {
@@ -51,22 +51,7 @@ const PrestationsPage = () => {
         'Gestion stock',
         'Dashboard admin'
       ],
-      price: 'À partir de 3 500€',
-      popular: false
-    },
-    {
-      id: 'api-development',
-      icon: Zap,
-      title: 'Développement API',
-      description: 'APIs REST et GraphQL scalables et sécurisées',
-      features: [
-        'API REST/GraphQL',
-        'Documentation',
-        'Authentification JWT',
-        'Rate limiting',
-        'Monitoring'
-      ],
-      price: 'À partir de 1 500€',
+      price: 'À partir de 700€',
       popular: false
     },
     {
@@ -81,22 +66,37 @@ const PrestationsPage = () => {
         'Support technique',
         'Rapports mensuels'
       ],
-      price: 'À partir de 150€/mois',
+      price: 'À partir de 80€/mois',
       popular: false
     },
     {
-      id: 'consulting',
-      icon: Users,
-      title: 'Conseil & Audit',
-      description: 'Audit technique et conseil en architecture logicielle',
+      id: 'lua-fivem',
+      icon: Zap,
+      title: 'Développement Lua pour FiveM GTA',
+      description: 'Scripts personnalisés et systèmes avancés pour serveurs FiveM GTA. Optimisé pour la performance et la stabilité.',
       features: [
-        'Audit de code',
-        'Architecture review',
-        'Conseils techniques',
-        'Plan d\'amélioration',
-        'Formation équipe'
+        'Scripts sur-mesure',
+        'Systèmes de gestion',
+        'Optimisation serveur',
+        'Sécurité anti-cheat',
+        'Support & évolutivité'
       ],
-      price: 'À partir de 800€',
+      price: 'Sur devis',
+      popular: false
+    },
+    {
+      id: 'site-vitrine',
+      icon: Shield,
+      title: 'Développement de site vitrine',
+      description: 'Site web simple, professionnel et responsive pour présenter votre activité ou projet.',
+      features: [
+        'Design personnalisé',
+        '1 à 5 pages',
+        'Formulaire de contact',
+        'Optimisation SEO',
+        'Livraison rapide'
+      ],
+      price: '400€',
       popular: false
     }
   ]
@@ -112,29 +112,34 @@ const PrestationsPage = () => {
 
   return (
     <ClientLayout>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-anthracite to-dark-gray text-white py-24">
+      {/* Hero Section modernisée avec SVG dynamique */}
+      <section className="relative overflow-hidden py-28 bg-gradient-to-br from-anthracite to-dark-gray text-white">
+        <svg className="absolute left-1/2 top-0 -translate-x-1/2 -z-10 opacity-40" width="900" height="400" viewBox="0 0 900 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="450" cy="200" rx="400" ry="120" fill="#3B82F6" fillOpacity="0.25"/>
+          <ellipse cx="600" cy="100" rx="180" ry="60" fill="#FACC15" fillOpacity="0.18"/>
+        </svg>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+            <h1 className="text-5xl lg:text-6xl font-extrabold mb-6 tracking-tight drop-shadow-lg">
               Nos Prestations
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-              Des solutions complètes pour donner vie à vos projets web. 
-              De la conception au déploiement, nous vous accompagnons à chaque étape.
+            <p className="text-2xl text-gray-200 max-w-2xl mx-auto font-light">
+              Des solutions complètes pour donner vie à vos projets web.<br />
+              De la conception au déploiement, on vous accompagne à chaque étape.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Services Grid */}
-      <section className="py-24 bg-light-gray">
+      {/* Services Grid modernisé */}
+      <section className="relative py-24 bg-light-gray overflow-hidden">
+        <svg className="absolute -top-24 -left-32 w-96 h-96 opacity-30 -z-10" viewBox="0 0 400 400" fill="none"><ellipse cx="200" cy="200" rx="200" ry="120" fill="#FACC15"/></svg>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-8">
-            {services.map((service) => {
+          <div className="flex flex-wrap gap-12 justify-center">
+            {services.map((service, i) => {
               const Icon = service.icon
               return (
-                <Card key={service.id} className={`relative hover:shadow-xl transition-all ${service.popular ? 'ring-2 ring-electric-blue' : ''}`}>
+                <Card key={service.id} className={`relative hover:scale-105 hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-md border-2 ${service.popular ? 'border-electric-blue -rotate-2' : 'border-volt-yellow rotate-2'} ${i%2===0 ? '-translate-y-4' : 'translate-y-4'}`}>
                   {service.popular && (
                     <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                       <div className="bg-electric-blue text-white px-4 py-1 rounded-full text-sm font-medium">
@@ -142,30 +147,26 @@ const PrestationsPage = () => {
                       </div>
                     </div>
                   )}
-                  
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-xl flex items-center justify-center mx-auto mb-4 animate-bounce-slow">
                       <Icon className="w-8 h-8 text-white" />
                     </div>
-                    
                     <h3 className="text-2xl font-bold text-anthracite mb-3">{service.title}</h3>
                     <p className="text-gray-600 mb-6">{service.description}</p>
-                    
                     <div className="space-y-3 mb-6 text-left">
                       {service.features.map((feature, index) => (
                         <div key={index} className="flex items-center">
-                          <Check className="w-5 h-5 text-electric-blue mr-3 flex-shrink-0" />
+                          <Check className="w-5 h-5 text-electric-blue mr-3 flex-shrink-0 animate-pulse" />
                           <span className="text-gray-700">{feature}</span>
                         </div>
                       ))}
                     </div>
-                    
                     <div className="border-t pt-6">
                       <div className="text-2xl font-bold text-anthracite mb-4">{service.price}</div>
                       <Link href="/contact">
                         <Button 
                           variant={service.popular ? 'primary' : 'outline'} 
-                          className="w-full"
+                          className="w-full hover:scale-105"
                         >
                           Demander un devis
                         </Button>
