@@ -27,9 +27,11 @@ function MessageCardWithReply({ msg, user, updateIsRead, deleteMessage, refreshM
       <div className="mb-2 text-sm text-gray-700 whitespace-pre-line">{msg.content}</div>
       <div className="flex flex-wrap gap-2 items-center mt-2">
         <span className={`text-xs font-semibold ${msg.is_read ? 'text-gray-400' : 'text-green-600'}`}>{msg.is_read ? 'Lu' : 'Non lu'}</span>
-        <Button size="sm" variant="outline" onClick={handleUpdateIsRead} disabled={loading}>
-          {msg.is_read ? 'Marquer comme non lu' : 'Marquer comme lu'}
-        </Button>
+        {user && msg.receiver_id === user.id && (
+          <Button size="sm" variant="outline" onClick={handleUpdateIsRead} disabled={loading}>
+            {msg.is_read ? 'Marquer comme non lu' : 'Marquer comme lu'}
+          </Button>
+        )}
         <Button size="sm" variant="outline" className="!text-red-600 border-red-300 hover:bg-red-50" onClick={handleDelete}>Supprimer</Button>
         {isAdmin && (
           <Button size="sm" variant="secondary" onClick={() => setShowReply((v) => !v)}>
@@ -140,11 +142,12 @@ const MessagesPage = () => {
       const isAdmin = profile.role === 'admin';
       let rec = [], errRec, sentData = [], errSent;
       if (isAdmin) {
-        // Messages reçus : tous les messages où receiver_id = admin.id
+        // Messages reçus : tous les messages où receiver_id = admin.id ET sender_id != admin.id
         const recRes = await supabase
           .from("messages")
           .select("id, created_at, subject, content, sender_id, is_read, receiver_id")
           .eq("receiver_id", profile.id)
+          .neq("sender_id", profile.id)
           .order("created_at", { ascending: false });
         rec = recRes.data || [];
         errRec = recRes.error;
