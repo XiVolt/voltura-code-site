@@ -82,25 +82,27 @@ const ContactPage = () => {
         setLoading(false)
         return
       }
-      const adminId = adminProfiles[0].id
+      const adminId = String(adminProfiles[0].id)
+      // Debug temporaire
+      console.log('adminId:', adminId, 'userId:', user?.id)
+      const payload = {
+        sender_id: String(user?.id),
+        receiver_id: adminId,
+        subject: `[Contact] ${formData.subject}`,
+        content: [
+          `Nom: ${formData.name}`,
+          `Email: ${formData.email}`,
+          formData.company ? `Entreprise: ${formData.company}` : '',
+          formData.projectType ? `Type de projet: ${projectTypes.find(t => t.value === formData.projectType)?.label}` : '',
+          '',
+          'Message:',
+          formData.message
+        ].filter(Boolean).join('\n').trim()
+      }
+      console.log('payload:', payload)
       const { error } = await supabase
         .from('messages')
-        .insert([
-          {
-            sender_id: user?.id,
-            receiver_id: adminId,
-            subject: `[Contact] ${formData.subject}`,
-            content: [
-              `Nom: ${formData.name}`,
-              `Email: ${formData.email}`,
-              formData.company ? `Entreprise: ${formData.company}` : '',
-              formData.projectType ? `Type de projet: ${projectTypes.find(t => t.value === formData.projectType)?.label}` : '',
-              '',
-              'Message:',
-              formData.message
-            ].filter(Boolean).join('\n').trim()
-          }
-        ])
+        .insert([payload])
       if (error) {
         setErrors({ general: "Erreur lors de l'envoi du message" })
       } else {
