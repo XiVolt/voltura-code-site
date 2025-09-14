@@ -1,5 +1,6 @@
-  // DEBUG: Affichage temporaire des profils admins trouvés
-  const [adminDebug, setAdminDebug] = useState<any[]>([])
+
+
+
 
 'use client'
 
@@ -13,8 +14,20 @@ import Textarea from '@/components/ui/Textarea'
 import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
 
+// Fonction de debug à placer hors de ContactPage
+function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
+  return (
+    <div style={{ background: '#f0f0f0', color: '#333', padding: 12, margin: 12, border: '1px solid #ccc', borderRadius: 8 }}>
+      <b>DEBUG profils admin trouvés :</b>
+      <pre style={{ fontSize: 12, overflowX: 'auto' }}>{JSON.stringify(adminDebug, null, 2)}</pre>
+    </div>
+  )
+}
+
 
 const ContactPage = () => {
+  // DEBUG: Affichage temporaire des profils admins trouvés
+  const [adminDebug, setAdminDebug] = useState<any[]>([])
   const [user, setUser] = useState<any>(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [formData, setFormData] = useState({
@@ -120,6 +133,7 @@ const ContactPage = () => {
     } finally {
       setLoading(false)
     }
+  }
 
   // ---
 
@@ -130,8 +144,6 @@ const ContactPage = () => {
   // Affichage debug des profils admins trouvés (à retirer après debug)
   // À placer juste avant le return principal
 
-  // ---
-
 // Fonction de debug à placer hors de handleSubmit
 function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
   return (
@@ -141,7 +153,6 @@ function AdminDebugBlock({ adminDebug }: { adminDebug: any[] }) {
     </div>
   )
 }
-  }
 
   if (success) {
     return (
