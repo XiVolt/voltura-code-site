@@ -1,3 +1,4 @@
+"use client";
 // Formulaire de réponse intégré, gère son propre état
 
 // Formulaire de réponse intégré, gère son propre état
