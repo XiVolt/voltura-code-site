@@ -55,7 +55,7 @@ export default function ClientsPage() {
   const loadProjects = async (userId: string) => {
     setLoading(true)
     const { data, error } = await supabase
-      .from('projects')
+      .from('projects' as any)
       .select('*')
       .eq('client_id', userId)
       .order('created_at', { ascending: false })
@@ -63,14 +63,14 @@ export default function ClientsPage() {
     if (error) {
       console.error('Erreur:', error)
     } else {
-      setProjects(data || [])
+      setProjects((data as any) || [])
     }
     setLoading(false)
   }
 
   const loadProjectUpdates = async (projectId: string) => {
     const { data, error } = await supabase
-      .from('project_updates')
+      .from('project_updates' as any)
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true })
@@ -78,7 +78,7 @@ export default function ClientsPage() {
     if (error) {
       console.error('Erreur:', error)
     } else {
-      setUpdates(data || [])
+      setUpdates((data as any) || [])
     }
   }
 
@@ -91,7 +91,7 @@ export default function ClientsPage() {
     if (!newComment.trim() || !selectedProject) return
 
     const { error } = await supabase
-      .from('project_updates')
+      .from('project_updates' as any)
       .insert({
         project_id: selectedProject.id,
         author_id: user.id,
