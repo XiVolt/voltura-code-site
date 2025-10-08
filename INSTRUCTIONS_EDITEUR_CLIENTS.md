@@ -1,3 +1,8 @@
+# Code complet pour src/app/clients/page.tsx
+
+Copiez tout le code ci-dessous et collez-le dans un nouveau fichier `src/app/clients/page.tsx` :
+
+```typescript
 'use client'
 
 import React, { useEffect, useState } from 'react'
@@ -95,7 +100,7 @@ export default function ClientsPage() {
       .from('project_updates' as any)
       .select('*')
       .eq('project_id', projectId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false})
 
     setUpdates((data as any) || [])
   }
@@ -135,13 +140,13 @@ export default function ClientsPage() {
         .eq('id', selectedProject.id)
 
       if (!error) {
-        alert(' Modifications enregistrées !')
+        alert('✅ Modifications enregistrées !')
         if (user) loadProjects(user.id)
       } else {
-        alert(' Erreur lors de la sauvegarde')
+        alert('❌ Erreur lors de la sauvegarde')
       }
     } catch (err) {
-      alert(' Erreur lors de la sauvegarde')
+      alert('❌ Erreur lors de la sauvegarde')
     } finally {
       setSaving(false)
     }
@@ -154,9 +159,9 @@ export default function ClientsPage() {
     try {
       await handleSaveContent()
       await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(' Site publié avec succès !')
+      alert('🚀 Site publié avec succès !')
     } catch (err) {
-      alert(' Erreur lors de la publication')
+      alert('❌ Erreur lors de la publication')
     } finally {
       setPublishing(false)
     }
@@ -204,7 +209,7 @@ export default function ClientsPage() {
               <Card className="text-center py-16">
                 <Package className="w-20 h-20 text-gray-400 mx-auto mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Aucun projet en cours</h2>
-                <p className="text-gray-600 mb-6">Vous n avez pas encore de projet actif</p>
+                <p className="text-gray-600 mb-6">Vous n'avez pas encore de projet actif</p>
                 <a href="/contact">
                   <Button>Démarrer un projet</Button>
                 </a>
@@ -368,7 +373,7 @@ export default function ClientsPage() {
                   className="p-6 rounded-xl"
                   style={{ backgroundColor: projectContent.accentColor, color: '#000' }}
                 >
-                  <h3 className="text-xl font-bold">Couleur Accent</h3>
+                  <h3 className="text-xl font-bold">Couleur d'Accent</h3>
                   <p className="mt-2 opacity-90">Pour les boutons et call-to-action</p>
                 </div>
               </div>
@@ -377,7 +382,7 @@ export default function ClientsPage() {
                 <div className="mt-8 p-6 bg-blue-50 rounded-xl">
                   <h4 className="font-semibold mb-2 flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-blue-600" />
-                    Notes de équipe
+                    Notes de l'équipe
                   </h4>
                   <p className="text-gray-700 whitespace-pre-wrap">{selectedProject.notes}</p>
                 </div>
@@ -420,74 +425,27 @@ export default function ClientsPage() {
                   <h3 className="text-lg font-bold">Couleurs</h3>
                 </div>
                 <div className="space-y-3 bg-dark-gray p-4 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Couleur principale</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.primaryColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, primaryColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.primaryColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, primaryColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
+                  {['primaryColor', 'accentColor', 'backgroundColor', 'textColor'].map((key) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium mb-2 capitalize">
+                        {key.replace('Color', ' ').replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="color"
+                          value={projectContent[key as keyof typeof projectContent] as string}
+                          onChange={(e) => setProjectContent({ ...projectContent, [key]: e.target.value })}
+                          className="w-12 h-10 rounded cursor-pointer"
+                        />
+                        <input
+                          type="text"
+                          value={projectContent[key as keyof typeof projectContent] as string}
+                          onChange={(e) => setProjectContent({ ...projectContent, [key]: e.target.value })}
+                          className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Couleur accent</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.accentColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, accentColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.accentColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, accentColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Fond</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.backgroundColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, backgroundColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.backgroundColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, backgroundColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Texte</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.textColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, textColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.textColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, textColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
@@ -514,7 +472,7 @@ export default function ClientsPage() {
                       value={projectContent.heroImage}
                       onChange={(e) => setProjectContent({ ...projectContent, heroImage: e.target.value })}
                       className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white text-sm"
-                      placeholder="URL image"
+                      placeholder="URL de l'image"
                     />
                   </div>
                 </div>
@@ -539,7 +497,7 @@ export default function ClientsPage() {
                         >
                           <div className="flex justify-between mb-1">
                             <span className="text-xs font-semibold text-volt-yellow">
-                              {update.is_admin ? 'Admin' : 'Vous'}
+                              {update.is_admin ? '👨‍💼 Admin' : '👤 Vous'}
                             </span>
                             <span className="text-xs text-gray-400">
                               {new Date(update.created_at).toLocaleDateString('fr-FR')}
@@ -586,3 +544,17 @@ export default function ClientsPage() {
     </ClientLayout>
   )
 }
+```
+
+## Instructions :
+
+1. Dans VSCode, créez un nouveau fichier : `src/app/clients/page.tsx`
+2. Copiez tout le code TypeScript ci-dessus (sans les backticks markdown)
+3. Sauvegardez le fichier
+
+Le système créera automatiquement une page avec :
+- 📋 Liste des projets (vue initiale)
+- ✏️ Éditeur visuel complet quand vous cliquez sur un projet
+- 🎨 Panneau de contrôle à droite avec tous les réglages
+- 💾 Boutons Enregistrer et Publier
+- 💬 Discussion intégrée
