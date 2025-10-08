@@ -1,0 +1,57 @@
+{
+  "hero": {
+    "title": "Transformez vos idées en réalité digitale",
+    "subtitle": "Développement web moderne et solutions sur mesure",
+    "ctaText": "Démarrer un projet",
+    "backgroundColor": "#1a1a2e",
+    "textColor": "#ffffff",
+    "image": "/images/hero-bg.jpg"
+  },
+  "services": {
+    "title": "Nos Services",
+    "subtitle": "Des solutions adaptées à vos besoins",
+    "items": [
+      {
+        "id": "web-app",
+        "title": "Applications Web",
+        "description": "Développement d'applications web modernes et performantes",
+        "icon": "💻",
+        "color": "#3b82f6"
+      },
+      {
+        "id": "vitrine",
+        "title": "Sites Vitrine",
+        "description": "Créez votre présence en ligne avec un site professionnel",
+        "icon": "🌐",
+        "color": "#10b981"
+      },
+      {
+        "id": "lua-fivem",
+        "title": "Développement Lua FiveM",
+        "description": "Scripts et mods personnalisés pour vos serveurs GTA RP",
+        "icon": "🎮",
+        "color": "#8b5cf6"
+      }
+    ]
+  },
+  "about": {
+    "title": "À Propos",
+    "description": "Voltura Code est une agence de développement web spécialisée dans la création de solutions digitales sur mesure.",
+    "image": "/images/about.jpg",
+    "backgroundColor": "#f9fafb"
+  },
+  "contact": {
+    "title": "Contactez-nous",
+    "subtitle": "Discutons de votre projet",
+    "email": "contact@volturacode.com",
+    "phone": "+33 X XX XX XX XX",
+    "backgroundColor": "#ffffff"
+  },
+  "theme": {
+    "primaryColor": "#3b82f6",
+    "secondaryColor": "#1a1a2e",
+    "accentColor": "#10b981",
+    "textColor": "#1f2937",
+    "backgroundColor": "#ffffff"
+  }
+}
