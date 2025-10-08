@@ -6,6 +6,7 @@ import { ArrowRight, Code2, Zap, Shield, Users, Star, ChevronRight, Github, Link
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
+import siteContent from '@/data/site-content.json'
 
 const HomePage = () => {
   const features = [
@@ -68,20 +69,15 @@ const HomePage = () => {
                 Solutions de développement innovantes
               </div>
               <h1 className="text-5xl lg:text-7xl font-extrabold leading-tight drop-shadow-lg">
-                Transformez vos{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-electric-blue to-volt-yellow">
-                  idées
-                </span>{' '}
-                en applications performantes
+                {siteContent.hero.title}
               </h1>
               <p className="text-2xl text-gray-200 max-w-2xl font-light">
-                Voltura Code vous accompagne dans la création d'applications web modernes, sécurisées et optimisées.<br />
-                Du concept au déploiement, on donne vie à vos projets avec style.
+                {siteContent.hero.subtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link href="/contact">
                   <Button size="lg" className="w-full sm:w-auto hover:scale-105 transition-transform">
-                    Commencer un projet
+                    {siteContent.hero.ctaText}
                     <ArrowRight className="w-5 h-5 ml-2 animate-bounce" />
                   </Button>
                 </Link>
@@ -173,7 +169,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl lg:text-4xl font-bold text-anthracite mb-4">
-              Nos Services
+              {siteContent.services.title}
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               Des solutions complètes pour tous vos besoins de développement web
@@ -181,47 +177,21 @@ const HomePage = () => {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="hover:shadow-xl transition-shadow">
-              <div className="h-2 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-t-lg -mx-6 -mt-6 mb-6"></div>
-              <h3 className="text-xl font-semibold text-anthracite mb-3">Développement Web</h3>
-              <p className="text-gray-600 mb-4">
-                Applications web modernes avec React, Next.js et les meilleures pratiques du développement.
-              </p>
-              <div className="text-sm text-gray-500 mb-4">À partir de 900€</div>
-              <Link href="/prestations">
-                <Button variant="outline" className="w-full">
-                  En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </Card>
-
-            <Card className="hover:shadow-xl transition-shadow">
-              <div className="h-2 bg-gradient-to-r from-volt-yellow to-electric-blue rounded-t-lg -mx-6 -mt-6 mb-6"></div>
-              <h3 className="text-xl font-semibold text-anthracite mb-3">Applications Métier</h3>
-              <p className="text-gray-600 mb-4">
-                Solutions sur-mesure pour optimiser vos processus business avec tableaux de bord et authentification.
-              </p>
-              <div className="text-sm text-gray-500 mb-4">Sur devis</div>
-              <Link href="/prestations">
-                <Button variant="outline" className="w-full">
-                  En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </Card>
-
-            <Card className="hover:shadow-xl transition-shadow">
-              <div className="h-2 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-t-lg -mx-6 -mt-6 mb-6"></div>
-              <h3 className="text-xl font-semibold text-anthracite mb-3">Maintenance & Support</h3>
-              <p className="text-gray-600 mb-4">
-                Maintenance continue, mises à jour sécurité et support technique pour vos applications.
-              </p>
-              <div className="text-sm text-gray-500 mb-4">À partir de 80€/mois</div>
-              <Link href="/prestations">
-                <Button variant="outline" className="w-full">
-                  En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </Card>
+            {siteContent.services.items.map((service, index) => (
+              <Card key={index} className="hover:shadow-xl transition-shadow">
+                <div className="h-2 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-t-lg -mx-6 -mt-6 mb-6"></div>
+                <div className="text-4xl mb-4">{service.icon}</div>
+                <h3 className="text-xl font-semibold text-anthracite mb-3">{service.title}</h3>
+                <p className="text-gray-600 mb-4">
+                  {service.description}
+                </p>
+                <Link href="/prestations">
+                  <Button variant="outline" className="w-full">
+                    En savoir plus <ChevronRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
