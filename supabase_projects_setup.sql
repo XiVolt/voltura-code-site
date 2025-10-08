@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS projects (
   repository_url TEXT,
   demo_url TEXT,
   notes TEXT,
+  project_data JSONB, -- Données éditables du projet (contenu visuel)
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );
@@ -30,8 +31,8 @@ CREATE TABLE IF NOT EXISTS project_files (
 CREATE TABLE IF NOT EXISTS project_updates (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE NOT NULL,
-  author_id UUID REFERENCES auth.users(id) NOT NULL,
-  content TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id) NOT NULL,
+  message TEXT NOT NULL,
   is_admin BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
 );

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { User, Mail, Settings, MessageSquare, Package, Users, BarChart3, Shield, Edit, Save, X } from 'lucide-react'
+import { User, Mail, Settings, MessageSquare, Package, Users, BarChart3, Shield, Edit, Save, X, ExternalLink, Code } from 'lucide-react'
 import { supabase, getCurrentUser } from '@/lib/supabase'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -11,10 +11,21 @@ import Card from '@/components/ui/Card'
 import ClientLayout from '@/components/ClientLayout'
 import type { Profile, Message } from '@/types/supabase'
 
+interface Project {
+  id: string
+  title: string
+  description: string
+  status: string
+  progress: number
+  deadline: string
+  demo_url: string
+}
+
 const DashboardPage = () => {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({
@@ -60,6 +71,17 @@ const DashboardPage = () => {
         
         if (messagesData) {
           setMessages(messagesData)
+        }
+
+        // Get user projects
+        if (profileData?.role !== 'admin') {
+          const { data: projectsData } = await supabase
+            .from('projects' as any)
+            .select('*')
+            .eq('client_id', currentUser.id)
+            .order('created_at', { ascending: false })
+          
+          setProjects((projectsData as any) || [])
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error)
@@ -109,19 +131,41 @@ const DashboardPage = () => {
     },
     {
       name: 'Projets',
-      value: 0,
+      value: projects.length,
       icon: Package,
       color: 'text-volt-yellow',
       bgColor: 'bg-yellow-100'
     },
     {
-      name: 'Commandes',
-      value: 0,
+      name: 'En cours',
+      value: projects.filter(p => p.status === 'en_cours').length,
       icon: BarChart3,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
     }
   ]
+
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      en_attente: 'En attente',
+      en_cours: 'En cours',
+      en_revision: 'En révision',
+      termine: 'Terminé',
+      annule: 'Annulé'
+    }
+    return labels[status] || status
+  }
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      en_attente: 'bg-gray-100 text-gray-800',
+      en_cours: 'bg-blue-100 text-blue-800',
+      en_revision: 'bg-yellow-100 text-yellow-800',
+      termine: 'bg-green-100 text-green-800',
+      annule: 'bg-red-100 text-red-800'
+    }
+    return colors[status] || 'bg-gray-100 text-gray-800'
+  }
 
   if (loading) {
     return (
@@ -165,7 +209,7 @@ const DashboardPage = () => {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Left Column - Stats & Profile */}
+            {/* Left Column - Stats & Projects */}
             <div className="lg:col-span-2 space-y-8">
               {/* Stats */}
               <div className="grid md:grid-cols-3 gap-6">
@@ -186,6 +230,71 @@ const DashboardPage = () => {
                   )
                 })}
               </div>
+
+              {/* Projects Section - Only for Clients */}
+              {profile?.role !== 'admin' && (
+                <Card>
+                  <h2 className="text-xl font-semibold text-anthracite mb-6">Mes Projets</h2>
+                  {projects.length > 0 ? (
+                    <div className="space-y-4">
+                      {projects.map((project) => (
+                        <div key={project.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <h3 className="font-semibold text-lg">{project.title}</h3>
+                              <p className="text-gray-600 text-sm mt-1">{project.description}</p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(project.status)}`}>
+                              {getStatusLabel(project.status)}
+                            </span>
+                          </div>
+
+                          <div className="mb-3">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className="text-gray-600">Progression</span>
+                              <span className="font-semibold">{project.progress}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-electric-blue rounded-full h-2 transition-all"
+                                style={{ width: `${project.progress}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {project.deadline && (
+                            <p className="text-sm text-gray-600 mb-3">
+                              📅 Échéance: {new Date(project.deadline).toLocaleDateString('fr-FR')}
+                            </p>
+                          )}
+
+                          <div className="flex gap-2">
+                            <Link href={`/dashboard/project/${project.id}`} className="flex-1">
+                              <Button variant="primary" className="w-full justify-center">
+                                <Code className="w-4 h-4 mr-2" />
+                                Éditer mon projet
+                              </Button>
+                            </Link>
+                            {project.demo_url && (
+                              <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
+                                <Button variant="outline">
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Package className="w-16 h-16 mx-auto mb-3 text-gray-400" />
+                      <p>Aucun projet en cours</p>
+                      <p className="text-sm mt-2">Contactez-nous pour démarrer un projet</p>
+                    </div>
+                  )}
+                </Card>
+              )}
 
               {/* Profile Section */}
               <Card>
@@ -257,6 +366,12 @@ const DashboardPage = () => {
                       <Button variant="outline" className="w-full justify-start">
                         <Users className="w-4 h-4 mr-2" />
                         Gestion utilisateurs
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/admin/projects">
+                      <Button variant="outline" className="w-full justify-start">
+                        <Package className="w-4 h-4 mr-2" />
+                        Gestion projets
                       </Button>
                     </Link>
                     <Link href="/dashboard/admin/messages">
