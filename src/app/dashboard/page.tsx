@@ -38,12 +38,13 @@ const DashboardPage = () => {
   useEffect(() => {
     const initialize = async () => {
       try {
-        const currentUser = await getCurrentUser()
-        if (!currentUser) {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
           router.push('/auth/login')
           return
         }
         
+        const currentUser = session.user
         setUser(currentUser)
         
         // Get user profile

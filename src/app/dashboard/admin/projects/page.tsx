@@ -58,8 +58,8 @@ export default function AdminProjectsPage() {
   }, [])
 
   const checkAdmin = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
       router.push('/auth/login')
       return
     }
@@ -67,7 +67,7 @@ export default function AdminProjectsPage() {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single()
 
     if (profile?.role !== 'admin') {
@@ -81,23 +81,55 @@ export default function AdminProjectsPage() {
   const loadData = async () => {
     setLoading(true)
     
-    // Charger les projets avec les infos clients
-    const { data: projectsData } = await supabase
-      .from('projects' as any)
-      .select(`
-        *,
-        profiles:client_id (email, full_name)
-      `)
+    console.log('🔍 Chargement des projets admin...')
+
+    // Charger TOUS les projets (sans jointure pour éviter les erreurs)
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
       .order('created_at', { ascending: false })
 
-    // Charger les clients (utilisateurs non-admin)
-    const { data: clientsData } = await supabase
+    if (projectsError) {
+      console.error('❌ Erreur chargement projets:', projectsError)
+      alert(`Erreur: ${projectsError.message}`)
+    } else {
+      console.log('✅ Projets chargés:', projectsData?.length, projectsData)
+
+      // Charger les profils des clients pour chaque projet
+      if (projectsData && projectsData.length > 0) {
+        const projectsWithProfiles = await Promise.all(
+          projectsData.map(async (project: any) => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email, full_name')
+              .eq('id', project.client_id)
+              .single()
+
+            return {
+              ...project,
+              profiles: profile
+            }
+          })
+        )
+        setProjects(projectsWithProfiles as any)
+      } else {
+        setProjects([])
+      }
+    }
+
+    // Charger les clients (utilisateurs)
+    const { data: clientsData, error: clientsError } = await supabase
       .from('profiles')
       .select('id, email, full_name')
-      .eq('role', 'user')
+      .order('created_at', { ascending: false })
 
-    setProjects((projectsData as any) || [])
-    setClients(clientsData || [])
+    if (clientsError) {
+      console.error('❌ Erreur chargement clients:', clientsError)
+    } else {
+      console.log('✅ Clients chargés:', clientsData?.length, clientsData)
+      setClients(clientsData || [])
+    }
+
     setLoading(false)
   }
 

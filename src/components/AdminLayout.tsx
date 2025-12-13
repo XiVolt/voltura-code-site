@@ -8,6 +8,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <nav className="bg-anthracite text-white px-6 py-4 flex gap-6 items-center">
         <Link href="/dashboard/admin/users" className="hover:underline">Utilisateurs</Link>
         <Link href="/dashboard/admin/projects" className="hover:underline">Projets</Link>
+        <Link href="/dashboard/admin/chats" className="hover:underline font-semibold">💬 Chats Clients</Link>
         <Link href="/dashboard/admin/messages" className="hover:underline">Messages</Link>
         <Link href="/dashboard/admin/editor" className="hover:underline text-volt-yellow">✏️ Éditeur de Contenu</Link>
         <Link href="/dashboard" className="ml-auto hover:underline">Retour dashboard</Link>

@@ -2,18 +2,15 @@
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import ClientLayout from '@/components/ClientLayout'
-import { 
-  Package, ArrowLeft, Save, Eye, EyeOff, ExternalLink, 
-  MessageSquare, Send, Palette, Type, Image as ImageIcon,
-  Sparkles, CheckCircle, Rocket
+import {
+  Package, MessageSquare, ExternalLink, Clock, CheckCircle,
+  AlertCircle, Loader, Calendar, TrendingUp, ArrowRight
 } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import Card from '@/components/ui/Card'
-import EditableText from '@/components/editor/EditableText'
-import EditableColor from '@/components/editor/EditableColor'
-import EditableImage from '@/components/editor/EditableImage'
 
 interface Project {
   id: string
@@ -25,58 +22,45 @@ interface Project {
   demo_url: string
   repository_url: string
   notes: string
-  project_data: any
+  created_at: string
 }
 
-interface ProjectUpdate {
-  id: string
-  message: string
-  created_at: string
-  is_admin: boolean
+const STATUS_CONFIG = {
+  en_attente: { label: 'En attente', color: 'text-yellow-600 bg-yellow-50', icon: Clock },
+  en_cours: { label: 'En cours', color: 'text-blue-600 bg-blue-50', icon: Loader },
+  en_revision: { label: 'En révision', color: 'text-purple-600 bg-purple-50', icon: AlertCircle },
+  termine: { label: 'Terminé', color: 'text-green-600 bg-green-50', icon: CheckCircle },
+  annule: { label: 'Annulé', color: 'text-red-600 bg-red-50', icon: AlertCircle }
 }
 
 export default function ClientsPage() {
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [updates, setUpdates] = useState<ProjectUpdate[]>([])
-  const [newComment, setNewComment] = useState('')
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({})
   const [user, setUser] = useState<any>(null)
-  const [editMode, setEditMode] = useState(false)
   const router = useRouter()
 
-  const [projectContent, setProjectContent] = useState({
-    title: 'Mon Projet',
-    subtitle: 'Description courte',
-    primaryColor: '#00A6ED',
-    accentColor: '#F7D500',
-    backgroundColor: '#FFFFFF',
-    textColor: '#2C2C2C',
-    heroImage: '/images/hero.jpg',
-    logoImage: '/images/logo.png',
-    sections: [] as any[]
-  })
-
   useEffect(() => {
-    checkUser()
+    checkAuth()
   }, [])
 
-  const checkUser = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
       router.push('/auth/login')
       return
     }
 
-    setUser(user)
-    loadProjects(user.id)
+    setUser(session.user)
+    setAuthChecked(true)
+    await loadProjects(session.user.id)
   }
 
   const loadProjects = async (userId: string) => {
     setLoading(true)
-    
+
     const { data, error } = await supabase
       .from('projects' as any)
       .select('*')
@@ -85,102 +69,33 @@ export default function ClientsPage() {
 
     if (!error && data) {
       setProjects((data as any) || [])
+
+      // Charger le nombre de messages non lus pour chaque projet
+      for (const project of data as any[]) {
+        const { count } = await supabase
+          .from('project_chats' as any)
+          .select('*', { count: 'exact', head: true })
+          .eq('project_id', project.id)
+          .eq('is_admin', true)
+          .eq('is_read', false)
+
+        setUnreadCounts(prev => ({ ...prev, [project.id]: count || 0 }))
+      }
     }
-    
+
     setLoading(false)
   }
 
-  const loadProjectUpdates = async (projectId: string) => {
-    const { data } = await supabase
-      .from('project_updates' as any)
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false })
-
-    setUpdates((data as any) || [])
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
   }
 
-  const handleProjectClick = (project: Project) => {
-    setSelectedProject(project)
-    loadProjectUpdates(project.id)
-    
-    if (project.project_data) {
-      setProjectContent(project.project_data)
-    } else {
-      setProjectContent({
-        title: project.title,
-        subtitle: project.description,
-        primaryColor: '#00A6ED',
-        accentColor: '#F7D500',
-        backgroundColor: '#FFFFFF',
-        textColor: '#2C2C2C',
-        heroImage: '/images/hero.jpg',
-        logoImage: '/images/logo.png',
-        sections: []
-      })
-    }
-  }
-
-  const handleSaveContent = async () => {
-    if (!selectedProject) return
-
-    setSaving(true)
-    try {
-      const { error } = await supabase
-        .from('projects' as any)
-        .update({
-          project_data: projectContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedProject.id)
-
-      if (!error) {
-        alert(' Modifications enregistrées !')
-        if (user) loadProjects(user.id)
-      } else {
-        alert(' Erreur lors de la sauvegarde')
-      }
-    } catch (err) {
-      alert(' Erreur lors de la sauvegarde')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handlePublish = async () => {
-    if (!selectedProject) return
-
-    setPublishing(true)
-    try {
-      await handleSaveContent()
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      alert(' Site publié avec succès !')
-    } catch (err) {
-      alert(' Erreur lors de la publication')
-    } finally {
-      setPublishing(false)
-    }
-  }
-
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !selectedProject) return
-
-    const { error } = await supabase
-      .from('project_updates' as any)
-      .insert([{
-        project_id: selectedProject.id,
-        user_id: user.id,
-        message: newComment,
-        is_admin: false
-      }])
-
-    if (!error) {
-      setNewComment('')
-      loadProjectUpdates(selectedProject.id)
-    }
-  }
-
-  if (loading) {
+  // Afficher le loading pendant la vérification de l'authentification
+  if (!authChecked || loading) {
     return (
       <ClientLayout>
         <div className="flex justify-center items-center min-h-screen">
@@ -190,399 +105,107 @@ export default function ClientsPage() {
     )
   }
 
-  if (!selectedProject) {
-    return (
-      <ClientLayout>
-        <div className="min-h-screen bg-gray-50 py-12">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-anthracite mb-2">Mes Projets</h1>
-              <p className="text-gray-600">Cliquez sur un projet pour le modifier et le publier</p>
-            </div>
+  // Si pas d'utilisateur après la vérification, ne rien afficher (redirection en cours)
+  if (!user) {
+    return null
+  }
 
-            {projects.length === 0 ? (
-              <Card className="text-center py-16">
-                <Package className="w-20 h-20 text-gray-400 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Aucun projet en cours</h2>
-                <p className="text-gray-600 mb-6">Vous n avez pas encore de projet actif</p>
-                <a href="/contact">
-                  <Button>Démarrer un projet</Button>
-                </a>
-              </Card>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {projects.map((project) => (
-                  <Card 
-                    key={project.id} 
-                    className="hover:shadow-xl transition-shadow cursor-pointer"
-                    onClick={() => handleProjectClick(project)}
+  return (
+    <ClientLayout>
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="mb-8">
+            <h1 className="text-4xl font-bold text-anthracite mb-2">Mes Projets</h1>
+            <p className="text-gray-600">Suivez l'avancement de vos projets et communiquez avec notre équipe</p>
+          </div>
+
+          {projects.length === 0 ? (
+            <Card className="text-center py-16">
+              <Package className="w-20 h-20 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold mb-2">Aucun projet en cours</h2>
+              <p className="text-gray-600 mb-6">Vous n'avez pas encore de projet actif</p>
+              <Link href="/contact">
+                <Button>Démarrer un projet</Button>
+              </Link>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => {
+                const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.en_cours
+                const StatusIcon = statusConfig.icon
+                const unreadCount = unreadCounts[project.id] || 0
+
+                return (
+                  <Card
+                    key={project.id}
+                    className="hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                   >
                     <div className="mb-4">
-                      <h3 className="text-xl font-bold mb-2">{project.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-2">{project.description}</p>
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-bold text-anthracite flex-1">{project.title}</h3>
+                        {unreadCount > 0 && (
+                          <span className="bg-electric-blue text-white text-xs font-bold px-2 py-1 rounded-full">
+                            {unreadCount}
+                          </span>
+                        )}
+                      </div>
+
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{project.description}</p>
+
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.color}`}>
+                        <StatusIcon className="w-4 h-4" />
+                        {statusConfig.label}
+                      </div>
                     </div>
 
                     <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="text-gray-600">Progression</span>
-                        <span className="font-semibold">{project.progress}%</span>
+                      <div className="flex justify-between text-sm mb-2">
+                        <span className="text-gray-600 flex items-center gap-1">
+                          <TrendingUp className="w-4 h-4" />
+                          Progression
+                        </span>
+                        <span className="font-semibold text-electric-blue">{project.progress}%</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
                         <div
-                          className="bg-electric-blue rounded-full h-2 transition-all"
+                          className="bg-gradient-to-r from-electric-blue to-blue-600 rounded-full h-2.5 transition-all duration-500"
                           style={{ width: `${project.progress}%` }}
                         />
                       </div>
                     </div>
 
-                    <Button variant="primary" className="w-full">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Modifier mon site
-                    </Button>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </ClientLayout>
-    )
-  }
-
-  return (
-    <ClientLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b sticky top-0 z-50 shadow-sm">
-          <div className="max-w-full px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => setSelectedProject(null)}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Mes projets
-                </Button>
-                <div className="border-l pl-4">
-                  <h1 className="font-bold text-lg">{selectedProject.title}</h1>
-                  <p className="text-xs text-gray-600">Mode édition</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button variant={editMode ? 'primary' : 'outline'} onClick={() => setEditMode(!editMode)} size="sm">
-                  {editMode ? <><EyeOff className="w-4 h-4 mr-2" /> Aperçu</> : <><Eye className="w-4 h-4 mr-2" /> Éditer</>}
-                </Button>
-
-                <Button onClick={handleSaveContent} loading={saving} variant="outline" size="sm">
-                  <Save className="w-4 h-4 mr-2" />
-                  Enregistrer
-                </Button>
-
-                <Button onClick={handlePublish} loading={publishing} size="sm" className="bg-green-600 hover:bg-green-700">
-                  <Rocket className="w-4 h-4 mr-2" />
-                  Publier
-                </Button>
-
-                {selectedProject.demo_url && (
-                  <a href={selectedProject.demo_url} target="_blank" rel="noopener noreferrer">
-                    <Button variant="ghost" size="sm">
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex h-[calc(100vh-73px)]">
-          <div className="flex-1 overflow-y-auto bg-white p-8">
-            <div className="max-w-4xl mx-auto">
-              <div 
-                className="rounded-xl p-12 mb-8 transition-all"
-                style={{ 
-                  backgroundColor: projectContent.backgroundColor,
-                  color: projectContent.textColor,
-                  borderLeft: `6px solid ${projectContent.primaryColor}`
-                }}
-              >
-                {projectContent.logoImage && (
-                  <div className="mb-6">
-                    <EditableImage
-                      value={projectContent.logoImage}
-                      onChange={(val) => setProjectContent({ ...projectContent, logoImage: val })}
-                      isEditMode={editMode}
-                      alt="Logo"
-                      className="h-16 w-auto"
-                    />
-                  </div>
-                )}
-
-                <EditableText
-                  value={projectContent.title}
-                  onChange={(val) => setProjectContent({ ...projectContent, title: val })}
-                  className="text-5xl font-bold mb-4"
-                  isEditMode={editMode}
-                />
-                
-                <EditableText
-                  value={projectContent.subtitle}
-                  onChange={(val) => setProjectContent({ ...projectContent, subtitle: val })}
-                  className="text-2xl opacity-90"
-                  isEditMode={editMode}
-                />
-
-                <div className="mt-8">
-                  <button
-                    className="px-8 py-4 rounded-lg font-semibold text-lg transition-all hover:scale-105"
-                    style={{ 
-                      backgroundColor: projectContent.accentColor,
-                      color: '#000'
-                    }}
-                  >
-                    En savoir plus
-                  </button>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-4" style={{ color: projectContent.primaryColor }}>
-                  Image principale
-                </h3>
-                <EditableImage
-                  value={projectContent.heroImage}
-                  onChange={(val) => setProjectContent({ ...projectContent, heroImage: val })}
-                  isEditMode={editMode}
-                  alt="Hero"
-                  className="rounded-xl shadow-lg"
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
-                <div 
-                  className="p-6 rounded-xl"
-                  style={{ backgroundColor: projectContent.primaryColor, color: '#fff' }}
-                >
-                  <h3 className="text-xl font-bold">Couleur Principale</h3>
-                  <p className="mt-2 opacity-90">Pour les titres et éléments importants</p>
-                </div>
-                <div 
-                  className="p-6 rounded-xl"
-                  style={{ backgroundColor: projectContent.accentColor, color: '#000' }}
-                >
-                  <h3 className="text-xl font-bold">Couleur Accent</h3>
-                  <p className="mt-2 opacity-90">Pour les boutons et call-to-action</p>
-                </div>
-              </div>
-
-              {selectedProject.notes && (
-                <div className="mt-8 p-6 bg-blue-50 rounded-xl">
-                  <h4 className="font-semibold mb-2 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-blue-600" />
-                    Notes de équipe
-                  </h4>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedProject.notes}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="w-96 bg-anthracite text-white overflow-y-auto border-l">
-            <div className="p-6 space-y-6">
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Type className="w-5 h-5 text-volt-yellow" />
-                  <h3 className="text-lg font-bold">Textes</h3>
-                </div>
-                <div className="space-y-3 bg-dark-gray p-4 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Titre principal</label>
-                    <input
-                      type="text"
-                      value={projectContent.title}
-                      onChange={(e) => setProjectContent({ ...projectContent, title: e.target.value })}
-                      className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Sous-titre</label>
-                    <textarea
-                      value={projectContent.subtitle}
-                      onChange={(e) => setProjectContent({ ...projectContent, subtitle: e.target.value })}
-                      className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Palette className="w-5 h-5 text-volt-yellow" />
-                  <h3 className="text-lg font-bold">Couleurs</h3>
-                </div>
-                <div className="space-y-3 bg-dark-gray p-4 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Couleur principale</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.primaryColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, primaryColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.primaryColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, primaryColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Couleur accent</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.accentColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, accentColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.accentColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, accentColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Fond</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.backgroundColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, backgroundColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.backgroundColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, backgroundColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Texte</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="color"
-                        value={projectContent.textColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, textColor: e.target.value })}
-                        className="w-12 h-10 rounded cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={projectContent.textColor}
-                        onChange={(e) => setProjectContent({ ...projectContent, textColor: e.target.value })}
-                        className="flex-1 px-3 py-2 bg-anthracite border border-gray-600 rounded text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <ImageIcon className="w-5 h-5 text-volt-yellow" />
-                  <h3 className="text-lg font-bold">Images</h3>
-                </div>
-                <div className="space-y-3 bg-dark-gray p-4 rounded-lg">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Logo</label>
-                    <input
-                      type="text"
-                      value={projectContent.logoImage}
-                      onChange={(e) => setProjectContent({ ...projectContent, logoImage: e.target.value })}
-                      className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white text-sm"
-                      placeholder="URL du logo"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Image hero</label>
-                    <input
-                      type="text"
-                      value={projectContent.heroImage}
-                      onChange={(e) => setProjectContent({ ...projectContent, heroImage: e.target.value })}
-                      className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white text-sm"
-                      placeholder="URL image"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="w-5 h-5 text-volt-yellow" />
-                  <h3 className="text-lg font-bold">Discussion</h3>
-                </div>
-                <div className="bg-dark-gray p-4 rounded-lg">
-                  <div className="space-y-3 max-h-64 overflow-y-auto mb-3">
-                    {updates.length === 0 ? (
-                      <p className="text-gray-400 text-sm text-center py-4">Aucun message</p>
-                    ) : (
-                      updates.map((update) => (
-                        <div
-                          key={update.id}
-                          className={`p-3 rounded ${
-                            update.is_admin ? 'bg-electric-blue bg-opacity-20' : 'bg-anthracite'
-                          }`}
-                        >
-                          <div className="flex justify-between mb-1">
-                            <span className="text-xs font-semibold text-volt-yellow">
-                              {update.is_admin ? 'Admin' : 'Vous'}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {new Date(update.created_at).toLocaleDateString('fr-FR')}
-                            </span>
-                          </div>
-                          <p className="text-sm whitespace-pre-wrap">{update.message}</p>
-                        </div>
-                      ))
+                    {project.deadline && (
+                      <div className="mb-4 text-sm text-gray-600 flex items-center gap-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Échéance : {formatDate(project.deadline)}</span>
+                      </div>
                     )}
-                  </div>
 
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Votre message..."
-                    className="w-full px-3 py-2 bg-anthracite border border-gray-600 rounded text-white text-sm mb-2"
-                    rows={2}
-                  />
-                  <button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim()}
-                    className="w-full bg-electric-blue hover:bg-blue-600 text-white px-4 py-2 rounded text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <Send className="w-4 h-4" />
-                    Envoyer
-                  </button>
-                </div>
-              </div>
+                    <div className="flex gap-2">
+                      <Link href={`/dashboard/project/${project.id}`} className="flex-1">
+                        <Button variant="primary" className="w-full">
+                          <MessageSquare className="w-4 h-4 mr-2" />
+                          Ouvrir le chat
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
 
-              <div className="pt-4 border-t border-gray-700">
-                <Button onClick={handleSaveContent} loading={saving} className="w-full mb-3 bg-volt-yellow text-anthracite hover:bg-yellow-400">
-                  <Save className="w-4 h-4 mr-2" />
-                  Sauvegarder
-                </Button>
-                <Button onClick={handlePublish} loading={publishing} className="w-full bg-green-600 hover:bg-green-700">
-                  <Rocket className="w-4 h-4 mr-2" />
-                  Publier le site
-                </Button>
-              </div>
+                      {project.demo_url && (
+                        <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm" className="h-full">
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        </a>
+                      )}
+                    </div>
+                  </Card>
+                )
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </ClientLayout>
   )
 }
+

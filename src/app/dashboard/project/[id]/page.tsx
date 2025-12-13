@@ -1,16 +1,15 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import ClientLayout from '@/components/ClientLayout'
-import { ArrowLeft, Save, Eye, EyeOff, MessageSquare, Send, ExternalLink, Code2 } from 'lucide-react'
+import {
+  ArrowLeft, Send, Calendar,
+  TrendingUp, ExternalLink, Package
+} from 'lucide-react'
 import Button from '@/components/ui/Button'
-import Card from '@/components/ui/Card'
 import Link from 'next/link'
-import EditableText from '@/components/editor/EditableText'
-import EditableColor from '@/components/editor/EditableColor'
-import EditableImage from '@/components/editor/EditableImage'
 
 interface Project {
   id: string
@@ -26,59 +25,46 @@ interface Project {
   project_data: any
 }
 
-interface ProjectUpdate {
+interface ChatMessage {
   id: string
+  project_id: string
+  sender_id: string
   message: string
-  created_at: string
   is_admin: boolean
+  is_read: boolean
+  created_at: string
   profiles?: {
     full_name: string | null
     email: string
+    avatar_url: string | null
   }
 }
 
-export default function ProjectEditorPage() {
+const STATUS_CONFIG = {
+  en_attente: { label: 'En attente', color: 'text-yellow-600 bg-yellow-50' },
+  en_cours: { label: 'En cours', color: 'text-blue-600 bg-blue-50' },
+  en_revision: { label: 'En révision', color: 'text-purple-600 bg-purple-50' },
+  termine: { label: 'Terminé', color: 'text-green-600 bg-green-50' },
+  annule: { label: 'Annulé', color: 'text-red-600 bg-red-50' }
+}
+
+export default function ProjectChatPage() {
   const params = useParams()
   const router = useRouter()
   const projectId = params.id as string
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [sending, setSending] = useState(false)
   const [project, setProject] = useState<Project | null>(null)
-  const [updates, setUpdates] = useState<ProjectUpdate[]>([])
-  const [editMode, setEditMode] = useState(false)
-  const [newComment, setNewComment] = useState('')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [newMessage, setNewMessage] = useState('')
   const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
 
-  // Données éditables du projet (contenu visuel)
-  const [projectContent, setProjectContent] = useState({
-    title: 'Mon Projet',
-    subtitle: 'Description courte',
-    primaryColor: '#00A6ED',
-    accentColor: '#F7D500',
-    heroImage: '/images/hero.jpg',
-    sections: [] as any[]
-  })
-
-  useEffect(() => {
-    checkUserAndLoadProject()
-  }, [projectId])
-
-  const checkUserAndLoadProject = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-
-    setUser(user)
-    await loadProject(user.id)
-    await loadUpdates()
-  }
-
-  const loadProject = async (userId: string) => {
+  const loadProject = useCallback(async (userId: string) => {
     setLoading(true)
-    
+
     const { data: projectData, error } = await supabase
       .from('projects' as any)
       .select('*')
@@ -87,97 +73,183 @@ export default function ProjectEditorPage() {
 
     if (error || !projectData) {
       alert('Projet introuvable')
-      router.push('/dashboard')
+      router.push('/clients')
       return
     }
 
     const projData = projectData as any
 
     // Vérifier que l'utilisateur a accès à ce projet
-    const { data: profile } = await supabase
+    const { data: userProfile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', userId)
       .single()
 
-    if (projData.client_id !== userId && profile?.role !== 'admin') {
-      alert('Accès refusé')
-      router.push('/dashboard')
+    if (projData.client_id !== userId && userProfile?.role !== 'admin') {
+      alert('Accès non autorisé')
+      router.push('/clients')
       return
     }
 
     setProject(projData)
-
-    // Charger le contenu éditable depuis project_data ou utiliser les valeurs par défaut
-    if (projData.project_data) {
-      setProjectContent(projData.project_data)
-    } else {
-      setProjectContent({
-        title: projData.title,
-        subtitle: projData.description,
-        primaryColor: '#00A6ED',
-        accentColor: '#F7D500',
-        heroImage: '/images/hero.jpg',
-        sections: []
-      })
-    }
-
     setLoading(false)
-  }
+  }, [projectId, router])
 
-  const loadUpdates = async () => {
-    const { data } = await supabase
-      .from('project_updates' as any)
+  const loadMessages = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('project_chats' as any)
       .select(`
         *,
-        profiles:user_id (full_name, email)
+        profiles:sender_id (
+          full_name,
+          email,
+          avatar_url
+        )
       `)
       .eq('project_id', projectId)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
 
-    setUpdates((data as any) || [])
-  }
-
-  const handleSaveContent = async () => {
-    if (!project) return
-
-    setSaving(true)
-    try {
-      const { error } = await supabase
-        .from('projects' as any)
-        .update({
-          project_data: projectContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', projectId)
-
-      if (!error) {
-        alert('✅ Modifications enregistrées !')
-      } else {
-        alert('Erreur lors de la sauvegarde')
-      }
-    } catch (err) {
-      alert('Erreur lors de la sauvegarde')
-    } finally {
-      setSaving(false)
+    if (!error && data) {
+      setMessages((data as any) || [])
     }
+  }, [projectId])
+
+  const markMessagesAsRead = useCallback(async (userId: string) => {
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single()
+
+    const isAdmin = userProfile?.role === 'admin'
+
+    // Marquer les messages de l'autre partie comme lus
+    await supabase
+      .from('project_chats' as any)
+      .update({ is_read: true })
+      .eq('project_id', projectId)
+      .eq('is_admin', !isAdmin)
+      .eq('is_read', false)
+  }, [projectId])
+
+  const checkUserAndLoadProject = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      router.push('/auth/login')
+      return
+    }
+
+    setUser(session.user)
+
+    // Charger le profil de l'utilisateur
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
+
+    setProfile(profileData)
+
+    await loadProject(session.user.id)
+    await loadMessages()
+    await markMessagesAsRead(session.user.id)
+  }, [projectId, router, loadProject, loadMessages, markMessagesAsRead])
+
+  useEffect(() => {
+    checkUserAndLoadProject()
+  }, [checkUserAndLoadProject])
+
+  useEffect(() => {
+    if (projectId && user) {
+      // S'abonner aux nouveaux messages en temps réel
+      const channel = supabase
+        .channel(`project-chat-${projectId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'project_chats',
+            filter: `project_id=eq.${projectId}`
+          },
+          async (payload) => {
+            // Charger le profil de l'expéditeur
+            const { data: senderProfile } = await supabase
+              .from('profiles')
+              .select('full_name, email, avatar_url')
+              .eq('id', (payload.new as any).sender_id)
+              .single()
+
+            const newMsg = {
+              ...(payload.new as any),
+              profiles: senderProfile
+            }
+
+            setMessages(prev => [...prev, newMsg])
+            scrollToBottom()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
+    }
+  }, [projectId, user])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleAddComment = async () => {
-    if (!newComment.trim()) return
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!newMessage.trim() || !user || !project) return
+
+    setSending(true)
+
+    const isAdmin = profile?.role === 'admin'
 
     const { error } = await supabase
-      .from('project_updates' as any)
+      .from('project_chats' as any)
       .insert([{
-        project_id: projectId,
-        user_id: user.id,
-        message: newComment,
-        is_admin: false
+        project_id: project.id,
+        sender_id: user.id,
+        message: newMessage.trim(),
+        is_admin: isAdmin,
+        is_read: false
       }])
 
     if (!error) {
-      setNewComment('')
-      loadUpdates()
+      setNewMessage('')
+      await markMessagesAsRead(user.id)
+    } else {
+      alert('Erreur lors de l\'envoi du message')
+    }
+
+    setSending(false)
+  }
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+    if (days === 0) {
+      return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    } else if (days === 1) {
+      return 'Hier ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    } else if (days < 7) {
+      return date.toLocaleDateString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+    } else {
+      return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
     }
   }
 
@@ -191,54 +263,45 @@ export default function ProjectEditorPage() {
     )
   }
 
-  if (!project) return null
+  if (!project) {
+    return null
+  }
+
+  const statusConfig = STATUS_CONFIG[project.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.en_cours
 
   return (
     <ClientLayout>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header avec contrôles */}
-        <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
+      <div className="h-[calc(100vh-4rem)] flex flex-col bg-gray-50">
+        {/* Header */}
+        <div className="bg-white border-b shadow-sm">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Link href="/dashboard">
+                <Link href="/clients">
                   <Button variant="ghost" size="sm">
                     <ArrowLeft className="w-4 h-4 mr-2" />
-                    Retour
+                    Mes projets
                   </Button>
                 </Link>
-                <div>
-                  <h1 className="text-xl font-bold">{project.title}</h1>
-                  <p className="text-sm text-gray-600">Éditeur de contenu</p>
+                <div className="border-l pl-4">
+                  <h1 className="font-bold text-xl text-anthracite">{project.title}</h1>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={`text-xs px-2 py-1 rounded-full ${statusConfig.color} font-medium`}>
+                      {statusConfig.label}
+                    </span>
+                    <span className="text-sm text-gray-600">
+                      Progression : {project.progress}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Button
-                  variant={editMode ? 'primary' : 'outline'}
-                  onClick={() => setEditMode(!editMode)}
-                  size="sm"
-                >
-                  {editMode ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
-                  {editMode ? 'Aperçu' : 'Éditer'}
-                </Button>
-
-                {editMode && (
-                  <Button
-                    onClick={handleSaveContent}
-                    loading={saving}
-                    size="sm"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Enregistrer
-                  </Button>
-                )}
-
+              <div className="flex items-center gap-2">
                 {project.demo_url && (
                   <a href={project.demo_url} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm">
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      Voir le site
+                      Voir la démo
                     </Button>
                   </a>
                 )}
@@ -247,173 +310,141 @@ export default function ProjectEditorPage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* Colonne principale - Prévisualisation */}
-            <div className="lg:col-span-2">
-              <Card>
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Code2 className="w-5 h-5 text-electric-blue" />
-                    <h2 className="text-2xl font-bold">Contenu du Projet</h2>
+        {/* Chat Container */}
+        <div className="flex-1 overflow-hidden flex">
+          {/* Sidebar - Informations du projet */}
+          <div className="hidden lg:block w-80 bg-white border-r overflow-y-auto">
+            <div className="p-6">
+              <h2 className="text-lg font-bold mb-4 text-anthracite">Informations du projet</h2>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-600 font-medium">Description</label>
+                  <p className="mt-1 text-sm text-anthracite">{project.description || 'Aucune description'}</p>
+                </div>
+
+                {project.deadline && (
+                  <div>
+                    <label className="text-sm text-gray-600 font-medium flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Échéance
+                    </label>
+                    <p className="mt-1 text-sm text-anthracite">
+                      {new Date(project.deadline).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </p>
                   </div>
-                  <p className="text-gray-600">
-                    {editMode ? '✏️ Mode édition activé - Cliquez sur les éléments pour les modifier' : '👁️ Mode aperçu'}
-                  </p>
-                </div>
+                )}
 
-                {/* Section Hero */}
-                <div 
-                  className="mb-8 p-8 rounded-lg"
-                  style={{ 
-                    backgroundColor: projectContent.primaryColor + '10',
-                    borderLeft: `4px solid ${projectContent.primaryColor}`
-                  }}
-                >
-                  <EditableText
-                    value={projectContent.title}
-                    onChange={(val) => setProjectContent({ ...projectContent, title: val })}
-                    className="text-4xl font-bold mb-3"
-                    isEditMode={editMode}
-                  />
-                  
-                  <EditableText
-                    value={projectContent.subtitle}
-                    onChange={(val) => setProjectContent({ ...projectContent, subtitle: val })}
-                    className="text-xl text-gray-700"
-                    isEditMode={editMode}
-                  />
-                </div>
-
-                {/* Couleurs du thème */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4">Couleurs du thème</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Couleur principale</label>
-                      <EditableColor
-                        value={projectContent.primaryColor}
-                        onChange={(val) => setProjectContent({ ...projectContent, primaryColor: val })}
-                        isEditMode={editMode}
+                <div>
+                  <label className="text-sm text-gray-600 font-medium flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Progression
+                  </label>
+                  <div className="mt-2">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-semibold text-electric-blue">{project.progress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-gradient-to-r from-electric-blue to-blue-600 rounded-full h-2 transition-all"
+                        style={{ width: `${project.progress}%` }}
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Couleur d'accent</label>
-                      <EditableColor
-                        value={projectContent.accentColor}
-                        onChange={(val) => setProjectContent({ ...projectContent, accentColor: val })}
-                        isEditMode={editMode}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Image principale */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4">Image hero</h3>
-                  <EditableImage
-                    value={projectContent.heroImage}
-                    onChange={(val) => setProjectContent({ ...projectContent, heroImage: val })}
-                    isEditMode={editMode}
-                    alt="Hero du projet"
-                  />
-                </div>
-
-                {/* Informations du projet */}
-                <div className="border-t pt-6 mt-6">
-                  <h3 className="text-lg font-semibold mb-4">Détails du projet</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-semibold">Statut:</span> {project.status}
-                    </div>
-                    <div>
-                      <span className="font-semibold">Progression:</span> {project.progress}%
-                    </div>
-                    {project.deadline && (
-                      <div>
-                        <span className="font-semibold">Échéance:</span>{' '}
-                        {new Date(project.deadline).toLocaleDateString('fr-FR')}
-                      </div>
-                    )}
-                    {project.repository_url && (
-                      <div>
-                        <a
-                          href={project.repository_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-electric-blue hover:underline flex items-center gap-1"
-                        >
-                          <Code2 className="w-4 h-4" />
-                          Code source
-                        </a>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {project.notes && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold mb-2">📝 Notes de l'équipe</h4>
-                    <p className="text-gray-700 whitespace-pre-wrap">{project.notes}</p>
+                  <div>
+                    <label className="text-sm text-gray-600 font-medium">Notes</label>
+                    <p className="mt-1 text-sm text-anthracite whitespace-pre-wrap">{project.notes}</p>
                   </div>
                 )}
-              </Card>
+              </div>
+            </div>
+          </div>
+
+          {/* Zone de chat */}
+          <div className="flex-1 flex flex-col">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">Aucun message pour le moment</p>
+                  <p className="text-sm text-gray-500 mt-2">Envoyez un message pour démarrer la conversation</p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isOwnMessage = msg.sender_id === user.id
+                  const senderName = msg.profiles?.full_name || msg.profiles?.email || 'Utilisateur'
+
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-md ${isOwnMessage ? 'order-2' : 'order-1'}`}>
+                        {!isOwnMessage && (
+                          <div className="flex items-center gap-2 mb-1 px-1">
+                            <span className="text-xs font-medium text-gray-700">
+                              {msg.is_admin ? '👨‍💼 ' : ''}{senderName}
+                            </span>
+                          </div>
+                        )}
+                        <div
+                          className={`rounded-2xl px-4 py-3 ${
+                            isOwnMessage
+                              ? 'bg-electric-blue text-white'
+                              : 'bg-white border border-gray-200 text-anthracite'
+                          }`}
+                        >
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
+                        </div>
+                        <div className={`text-xs text-gray-500 mt-1 px-1 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
+                          {formatTime(msg.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Colonne Discussion */}
-            <div>
-              <Card>
-                <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="w-5 h-5 text-electric-blue" />
-                  <h3 className="text-xl font-bold">Discussion</h3>
-                </div>
-
-                <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                  {updates.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4 text-sm">
-                      Aucun message pour le moment
-                    </p>
-                  ) : (
-                    updates.map((update) => (
-                      <div
-                        key={update.id}
-                        className={`p-3 rounded-lg ${
-                          update.is_admin ? 'bg-blue-50 border-l-4 border-electric-blue' : 'bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between mb-1">
-                          <span className="font-semibold text-sm">
-                            {update.is_admin ? '👨‍💼 Admin' : '👤 Vous'}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(update.created_at).toLocaleDateString('fr-FR')}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{update.message}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="border-t pt-4">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Écrivez votre message..."
-                    className="w-full border rounded-lg px-3 py-2 text-sm mb-2"
-                    rows={3}
-                  />
+            {/* Zone de saisie */}
+            <div className="bg-white border-t p-4">
+              <form onSubmit={handleSendMessage} className="max-w-4xl mx-auto">
+                <div className="flex items-end gap-3">
+                  <div className="flex-1">
+                    <textarea
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      placeholder="Écrivez votre message..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-electric-blue focus:border-transparent"
+                      rows={3}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSendMessage(e)
+                        }
+                      }}
+                    />
+                  </div>
                   <Button
-                    onClick={handleAddComment}
-                    size="sm"
-                    className="w-full"
-                    disabled={!newComment.trim()}
+                    type="submit"
+                    disabled={!newMessage.trim() || sending}
+                    loading={sending}
+                    className="h-12 px-6"
                   >
-                    <Send className="w-4 h-4 mr-2" />
-                    Envoyer
+                    <Send className="w-5 h-5" />
                   </Button>
                 </div>
-              </Card>
+                <p className="text-xs text-gray-500 mt-2">Appuyez sur Entrée pour envoyer, Shift + Entrée pour un saut de ligne</p>
+              </form>
             </div>
           </div>
         </div>
@@ -421,3 +452,4 @@ export default function ProjectEditorPage() {
     </ClientLayout>
   )
 }
+

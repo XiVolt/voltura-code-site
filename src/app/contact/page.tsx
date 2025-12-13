@@ -87,10 +87,11 @@ const ContactPage = () => {
         setLoading(false)
         return
       }
-      const adminId = String(adminProfiles[0].id)
+      const adminId = adminProfiles[0].id
+
       const payload = {
-        sender_id: String(user?.id),
-        receiver_id: adminId,
+        sender_id: user?.id || null, // null si l'utilisateur n'est pas connecté
+        recipient_id: adminId, // Corrigé : recipient_id au lieu de receiver_id
         subject: `[Contact] ${formData.subject}`,
         content: [
           `Nom: ${formData.name}`,
@@ -100,7 +101,8 @@ const ContactPage = () => {
           '',
           'Message:',
           formData.message
-        ].filter(Boolean).join('\n').trim()
+        ].filter(Boolean).join('\n').trim(),
+        is_read: false
       }
       const { error } = await supabase
         .from('messages')
