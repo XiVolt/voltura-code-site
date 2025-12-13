@@ -1,7 +1,8 @@
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { supabase, signOut } from '@/lib/supabase'
+import { signOut } from '@/lib/supabase'
 import Button from '@/components/ui/Button'
 import { Menu, X, User, LogOut, Settings } from 'lucide-react'
 
@@ -37,8 +38,25 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">V</span>
+              {/* Logo Voltura Code - Place ton logo dans public/images/voltura-logo.png */}
+              <div className="relative w-12 h-12">
+                <Image
+                  src="/images/voltura-logo.png"
+                  alt="Voltura Code"
+                  width={48}
+                  height={48}
+                  className="object-contain"
+                  onError={(e) => {
+                    // Fallback si le logo n'est pas trouvé
+                    e.currentTarget.style.display = 'none'
+                    const fallback = e.currentTarget.nextElementSibling as HTMLElement
+                    if (fallback) fallback.style.display = 'flex'
+                  }}
+                />
+                {/* Fallback si pas de logo */}
+                <div className="hidden w-12 h-12 bg-gradient-to-r from-electric-blue to-volt-yellow rounded-lg items-center justify-center">
+                  <span className="text-white font-bold text-xl">V</span>
+                </div>
               </div>
               <span className="text-xl font-bold text-anthracite">Voltura Code</span>
             </Link>

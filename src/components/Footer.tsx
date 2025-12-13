@@ -27,7 +27,8 @@ const Footer: React.FC = () => {
     { name: 'Accueil', href: '/' },
     { name: 'Prestations', href: '/prestations' },
     { name: 'Contact', href: '/contact' },
-    { name: 'Mentions légales', href: '/legal' },
+    { name: 'CGV', href: '/cgv' },
+    { name: 'Mentions légales', href: '/mentions-legales' },
   ]
 
   return (

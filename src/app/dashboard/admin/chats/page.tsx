@@ -72,7 +72,7 @@ export default function AdminChatsPage() {
 
     // Charger TOUS les projets (sans jointure)
     const { data: projectsData, error } = await supabase
-      .from('projects' as any)
+      .from('projects')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -104,7 +104,7 @@ export default function AdminChatsPage() {
 
         // Compter les messages non lus du client
         const { count: unreadCount } = await supabase
-          .from('project_chats' as any)
+          .from('project_chats')
           .select('*', { count: 'exact', head: true })
           .eq('project_id', project.id)
           .eq('is_admin', false)
@@ -112,7 +112,7 @@ export default function AdminChatsPage() {
 
         // Récupérer le dernier message
         const { data: lastMessageData } = await supabase
-          .from('project_chats' as any)
+          .from('project_chats')
           .select('message, created_at')
           .eq('project_id', project.id)
           .order('created_at', { ascending: false })
@@ -124,8 +124,8 @@ export default function AdminChatsPage() {
           ...project,
           profiles: profile,
           unread_count: unreadCount || 0,
-          last_message: (lastMessage as any)?.message,
-          last_message_time: (lastMessage as any)?.created_at
+          last_message: lastMessage?.message,
+          last_message_time: lastMessage?.created_at
         }
       })
     )
