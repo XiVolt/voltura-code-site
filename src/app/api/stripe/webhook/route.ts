@@ -72,6 +72,18 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
     return;
   }
 
+  // Récupérer les infos de la facture pour connaître le projet et le type
+  const { data: invoice, error: fetchError } = await supabaseAdmin
+    .from('invoices')
+    .select('project_id, amount, notes')
+    .eq('id', invoiceId)
+    .single();
+
+  if (fetchError || !invoice) {
+    console.error('Erreur récupération facture:', fetchError);
+    return;
+  }
+
   // Mettre à jour la facture
   const { error: invoiceError } = await supabaseAdmin
     .from('invoices')
@@ -104,6 +116,33 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
 
   if (paymentError) {
     console.error('Erreur enregistrement paiement:', paymentError);
+  }
+
+  // Mettre à jour le projet si c'est un acompte ou solde final
+  if (invoice.project_id) {
+    const updateData: any = {};
+    const notes = invoice.notes?.toLowerCase() || '';
+
+    if (notes.includes('acompte') || notes.includes('deposit')) {
+      updateData.deposit_paid = true;
+      updateData.deposit_amount = invoice.amount;
+    } else if (notes.includes('solde') || notes.includes('final')) {
+      updateData.final_payment_paid = true;
+      updateData.final_payment_amount = invoice.amount;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      const { error: projectError } = await supabaseAdmin
+        .from('projects')
+        .update(updateData)
+        .eq('id', invoice.project_id);
+
+      if (projectError) {
+        console.error('Erreur mise à jour projet:', projectError);
+      } else {
+        console.log(`✅ Projet ${invoice.project_id} mis à jour`);
+      }
+    }
   }
 
   console.log(`✅ Paiement réussi pour la facture ${invoiceId}`);

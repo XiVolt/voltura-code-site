@@ -227,7 +227,8 @@ export default function InvoicesPage() {
 
       if (!stripeResponse.ok || !stripeData.paymentLink) {
         console.error('Erreur Stripe:', stripeData);
-        alert('⚠️ Facture créée mais erreur lors de la génération du lien de paiement.');
+        const errorMessage = stripeData.error || 'Erreur inconnue';
+        alert(`⚠️ Facture créée mais erreur lors de la génération du lien de paiement.\n\nErreur: ${errorMessage}\n\nVérifiez que STRIPE_SECRET_KEY est configurée dans Vercel.`);
         loadData();
         return;
       }

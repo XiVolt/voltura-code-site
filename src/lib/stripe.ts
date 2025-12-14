@@ -48,7 +48,7 @@ export async function createPaymentLink(params: {
       after_completion: {
         type: 'redirect',
         redirect: {
-          url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/clients?payment=success&invoice=${params.invoiceId}`,
+          url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?invoice=${params.invoiceId}`,
         },
       },
       customer_creation: 'if_required',
