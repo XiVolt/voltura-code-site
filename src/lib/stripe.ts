@@ -1,13 +1,12 @@
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY manquante dans les variables d\'environnement');
-}
-
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-11-17.clover',
-  typescript: true,
-});
+// Initialisation conditionnelle pour éviter les erreurs lors du build
+export const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-11-17.clover',
+      typescript: true,
+    })
+  : null;
 
 // Fonction pour créer un lien de paiement Stripe
 export async function createPaymentLink(params: {
@@ -19,6 +18,10 @@ export async function createPaymentLink(params: {
   description: string;
   projectTitle?: string;
 }) {
+  if (!stripe) {
+    throw new Error('Stripe n\'est pas initialisé. Vérifiez que STRIPE_SECRET_KEY est définie.');
+  }
+
   try {
     const paymentLink = await stripe.paymentLinks.create({
       line_items: [
