@@ -213,8 +213,8 @@ export default function InvoicesPage() {
           invoiceNumber: invoiceNumber,
           amount: parseFloat(formData.amount),
           projectTitle: project.title,
-          clientEmail: project.client?.email || 'inconnu@email.com',
-          clientName: project.client?.full_name,
+          clientEmail: client?.email || 'inconnu@email.com',
+          clientName: client?.full_name || null,
           description: formData.type === 'deposit'
             ? `Acompte - ${project.title}`
             : formData.type === 'final'
@@ -362,7 +362,7 @@ export default function InvoicesPage() {
                   <option value="">Sélectionner un projet</option>
                   {projects.map((project) => (
                     <option key={project.id} value={project.id}>
-                      {project.title} - {project.client.full_name || project.client.email}
+                      {project.title} - {project.client?.full_name || project.client?.email || 'Client inconnu'}
                     </option>
                   ))}
                 </select>
