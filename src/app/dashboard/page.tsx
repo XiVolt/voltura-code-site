@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { User, Mail, Settings, MessageSquare, Package, Users, BarChart3, Shield, Edit, Save, X, ExternalLink, Code } from 'lucide-react'
+import { User, Mail, Settings, MessageSquare, Package, Users, BarChart3, Shield, Edit, Save, X, ExternalLink, Code, DollarSign } from 'lucide-react'
 import { supabase, getCurrentUser } from '@/lib/supabase'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
@@ -26,6 +26,7 @@ const DashboardPage = () => {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [projects, setProjects] = useState<Project[]>([])
+  const [invoices, setInvoices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
   const [formData, setFormData] = useState({
@@ -83,6 +84,15 @@ const DashboardPage = () => {
             .order('created_at', { ascending: false })
           
           setProjects((projectsData as any) || [])
+
+          // Get user invoices
+          const { data: invoicesData } = await supabase
+            .from('invoices' as any)
+            .select('*')
+            .eq('client_id', currentUser.id)
+            .order('created_at', { ascending: false })
+
+          setInvoices((invoicesData as any) || [])
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation:', error)
@@ -128,22 +138,25 @@ const DashboardPage = () => {
       value: messages.length,
       icon: MessageSquare,
       color: 'text-electric-blue',
-      bgColor: 'bg-electric-blue/10'
+      bgColor: 'bg-electric-blue/10',
+      link: '/dashboard/messages'
     },
     {
       name: 'Projets',
       value: projects.length,
       icon: Package,
       color: 'text-volt-yellow',
-      bgColor: 'bg-yellow-100'
+      bgColor: 'bg-yellow-100',
+      link: profile?.role === 'admin' ? '/dashboard/admin/projects' : null
     },
     {
-      name: 'En cours',
-      value: projects.filter(p => p.status === 'en_cours').length,
-      icon: BarChart3,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
-    }
+      name: profile?.role === 'admin' ? 'Utilisateurs' : 'Factures',
+      value: profile?.role === 'admin' ? 0 : invoices.length,
+      icon: profile?.role === 'admin' ? Users : DollarSign,
+      color: profile?.role === 'admin' ? 'text-green-600' : 'text-green-600',
+      bgColor: profile?.role === 'admin' ? 'bg-green-100' : 'bg-green-100',
+      link: profile?.role === 'admin' ? '/dashboard/admin/users' : '/dashboard/clients/invoices'
+    },
   ]
 
   const getStatusLabel = (status: string) => {
@@ -216,8 +229,8 @@ const DashboardPage = () => {
               <div className="grid md:grid-cols-3 gap-6">
                 {stats.map((stat) => {
                   const Icon = stat.icon
-                  return (
-                    <Card key={stat.name}>
+                  const StatCard = (
+                    <Card key={stat.name} className="hover:shadow-lg transition-shadow cursor-pointer">
                       <div className="flex items-center">
                         <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
                           <Icon className={`w-5 h-5 ${stat.color}`} />
@@ -228,6 +241,14 @@ const DashboardPage = () => {
                         </div>
                       </div>
                     </Card>
+                  )
+
+                  return stat.link ? (
+                    <Link key={stat.name} href={stat.link}>
+                      {StatCard}
+                    </Link>
+                  ) : (
+                    StatCard
                   )
                 })}
               </div>

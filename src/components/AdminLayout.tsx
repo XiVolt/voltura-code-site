@@ -10,6 +10,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Link href="/dashboard/admin/projects" className="hover:underline">Projets</Link>
         <Link href="/dashboard/admin/chats" className="hover:underline font-semibold">💬 Chats Clients</Link>
         <Link href="/dashboard/admin/messages" className="hover:underline">Messages</Link>
+        <Link href="/dashboard/admin/invoices" className="hover:underline text-green-400">💰 Factures</Link>
         <Link href="/dashboard/admin/editor" className="hover:underline text-volt-yellow">✏️ Éditeur de Contenu</Link>
         <Link href="/dashboard" className="ml-auto hover:underline">Retour dashboard</Link>
       </nav>

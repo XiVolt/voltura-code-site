@@ -110,7 +110,7 @@ const Footer: React.FC = () => {
               © {currentYear} Voltura Code. Tous droits réservés.
             </p>
             <p className="text-gray-400 text-sm mt-2 md:mt-0">
-              Développé avec ❤️ et Next.js
+              Développé avec React et Next.js
             </p>
           </div>
         </div>

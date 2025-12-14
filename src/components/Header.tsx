@@ -38,10 +38,9 @@ const Header: React.FC<HeaderProps> = ({ user }) => {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              {/* Logo Voltura Code - Place ton logo dans public/images/voltura-logo.png */}
               <div className="relative w-12 h-12">
                 <Image
-                  src="/images/voltura-logo.png"
+                  src="/images/Voltura.png"
                   alt="Voltura Code"
                   width={48}
                   height={48}
