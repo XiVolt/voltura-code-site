@@ -45,6 +45,12 @@ export async function createPaymentLink(params: {
         invoice_id: params.invoiceId,
         invoice_number: params.invoiceNumber,
       },
+      payment_intent_data: {
+        metadata: {
+          invoice_id: params.invoiceId,
+          invoice_number: params.invoiceNumber,
+        },
+      },
       after_completion: {
         type: 'redirect',
         redirect: {
