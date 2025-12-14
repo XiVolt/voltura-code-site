@@ -23,7 +23,11 @@ export async function createPaymentLink(params: {
   }
 
   try {
-    const paymentLink = await stripe.paymentLinks.create({
+    // Créer une Checkout Session au lieu d'un Payment Link
+    // Car les Payment Links ne supportent pas payment_intent_data
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      customer_email: params.clientEmail,
       line_items: [
         {
           price_data: {
@@ -31,49 +35,29 @@ export async function createPaymentLink(params: {
             product_data: {
               name: `Facture ${params.invoiceNumber}`,
               description: params.description,
-              metadata: {
-                invoice_id: params.invoiceId,
-                project_title: params.projectTitle || '',
-              },
             },
             unit_amount: Math.round(params.amount * 100), // Convertir en centimes
           },
           quantity: 1,
         },
       ],
-      metadata: {
-        invoice_id: params.invoiceId,
-        invoice_number: params.invoiceNumber,
-      },
       payment_intent_data: {
         metadata: {
           invoice_id: params.invoiceId,
           invoice_number: params.invoiceNumber,
         },
       },
-      after_completion: {
-        type: 'redirect',
-        redirect: {
-          url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?invoice=${params.invoiceId}`,
-        },
+      metadata: {
+        invoice_id: params.invoiceId,
+        invoice_number: params.invoiceNumber,
       },
-      customer_creation: 'if_required',
-      invoice_creation: {
-        enabled: true,
-        invoice_data: {
-          description: params.description,
-          metadata: {
-            invoice_id: params.invoiceId,
-            invoice_number: params.invoiceNumber,
-          },
-          footer: 'Merci pour votre confiance - Voltura Code',
-        },
-      },
+      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/payment/success?invoice=${params.invoiceId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard/clients/invoices`,
     });
 
-    return paymentLink;
+    return { url: session.url };
   } catch (error) {
-    console.error('Erreur création lien de paiement Stripe:', error);
+    console.error('Erreur création session de paiement Stripe:', error);
     throw error;
   }
 }
