@@ -65,6 +65,94 @@ export async function POST(req: NextRequest) {
 }
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
+  await handlePaymentSuccessLogic(paymentIntent);
+}
+
+async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+  const invoiceId = paymentIntent.metadata.invoice_id;
+
+  if (!invoiceId) return;
+
+  const { error } = await supabaseAdmin
+    .from('invoices')
+    .update({
+      payment_status: 'failed',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', invoiceId);
+
+  if (error) {
+    console.error('Erreur mise à jour facture (échec):', error);
+  }
+
+  console.log(`❌ Paiement échoué pour la facture ${invoiceId}`);
+}
+
+async function handleRefund(charge: Stripe.Charge) {
+  const paymentIntentId = charge.payment_intent as string;
+
+  // Trouver la facture concernée
+  const { data: invoice } = await supabaseAdmin
+    .from('invoices')
+    .select('id')
+    .eq('stripe_payment_intent_id', paymentIntentId)
+    .single();
+
+  if (!invoice) return;
+
+  const { error } = await supabaseAdmin
+    .from('invoices')
+    .update({
+      payment_status: 'refunded',
+      status: 'refunded',
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', invoice.id);
+
+  if (error) {
+    console.error('Erreur mise à jour facture (remboursement):', error);
+  }
+
+  console.log(`💰 Remboursement effectué pour la facture ${invoice.id}`);
+}
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  console.log('Checkout session complété:', session.id);
+
+  // Récupérer le payment intent depuis la session
+  const paymentIntentId = session.payment_intent as string;
+
+  if (!paymentIntentId) {
+    console.error('payment_intent manquant dans la session');
+    return;
+  }
+
+  if (!stripe) {
+    console.error('Stripe non initialisé');
+    return;
+  }
+
+  try {
+    // Récupérer le Payment Intent pour avoir les métadonnées
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    const invoiceId = paymentIntent.metadata.invoice_id;
+
+    if (!invoiceId) {
+      console.error('invoice_id manquant dans les métadonnées du payment_intent');
+      return;
+    }
+
+    // Utiliser la même logique que handlePaymentSuccess
+    await handlePaymentSuccessLogic(paymentIntent);
+
+  } catch (error) {
+    console.error('Erreur traitement checkout.session.completed:', error);
+  }
+}
+
+// Fonction réutilisable pour la logique de paiement réussi
+async function handlePaymentSuccessLogic(paymentIntent: Stripe.PaymentIntent) {
   const invoiceId = paymentIntent.metadata.invoice_id;
 
   if (!invoiceId) {
@@ -148,56 +236,4 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   console.log(`✅ Paiement réussi pour la facture ${invoiceId}`);
 }
 
-async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  const invoiceId = paymentIntent.metadata.invoice_id;
-
-  if (!invoiceId) return;
-
-  const { error } = await supabaseAdmin
-    .from('invoices')
-    .update({
-      payment_status: 'failed',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', invoiceId);
-
-  if (error) {
-    console.error('Erreur mise à jour facture (échec):', error);
-  }
-
-  console.log(`❌ Paiement échoué pour la facture ${invoiceId}`);
-}
-
-async function handleRefund(charge: Stripe.Charge) {
-  const paymentIntentId = charge.payment_intent as string;
-
-  // Trouver la facture concernée
-  const { data: invoice } = await supabaseAdmin
-    .from('invoices')
-    .select('id')
-    .eq('stripe_payment_intent_id', paymentIntentId)
-    .single();
-
-  if (!invoice) return;
-
-  const { error } = await supabaseAdmin
-    .from('invoices')
-    .update({
-      payment_status: 'refunded',
-      status: 'refunded',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', invoice.id);
-
-  if (error) {
-    console.error('Erreur mise à jour facture (remboursement):', error);
-  }
-
-  console.log(`💰 Remboursement effectué pour la facture ${invoice.id}`);
-}
-
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log('Checkout session complété:', session.id);
-  // Gérer si vous utilisez Checkout Session au lieu de Payment Links
-}
 
