@@ -80,6 +80,10 @@ export async function createPaymentIntent(params: {
   clientEmail: string;
   description: string;
 }) {
+  if (!stripe) {
+    throw new Error('Stripe n\'est pas initialisé. Vérifiez que STRIPE_SECRET_KEY est définie.');
+  }
+
   try {
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(params.amount * 100), // Convertir en centimes
