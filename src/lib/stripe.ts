@@ -105,6 +105,10 @@ export async function createPaymentIntent(params: {
 
 // Fonction pour récupérer les informations d'un paiement
 export async function getPaymentIntent(paymentIntentId: string) {
+  if (!stripe) {
+    throw new Error('Stripe n\'est pas initialisé. Vérifiez que STRIPE_SECRET_KEY est définie.');
+  }
+
   try {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     return paymentIntent;
@@ -116,6 +120,10 @@ export async function getPaymentIntent(paymentIntentId: string) {
 
 // Fonction pour rembourser un paiement
 export async function refundPayment(paymentIntentId: string, amount?: number) {
+  if (!stripe) {
+    throw new Error('Stripe n\'est pas initialisé. Vérifiez que STRIPE_SECRET_KEY est définie.');
+  }
+
   try {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntentId,
