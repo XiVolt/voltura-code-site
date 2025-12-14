@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Signature manquante' }, { status: 400 });
   }
 
+  if (!stripe) {
+    console.error('Stripe non initialisé');
+    return NextResponse.json({ error: 'Configuration Stripe manquante' }, { status: 500 });
+  }
+
   let event: Stripe.Event;
 
   try {
